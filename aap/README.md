@@ -1,6 +1,6 @@
 # AAP Implementation Assets
 
-These files are the apply-ready AAP assets for the one-cluster must-gather MVP.
+These files are the apply-ready AAP or AWX assets for the one-cluster must-gather MVP.
 
 ## Files
 
@@ -40,7 +40,7 @@ scripts/apply-aap-controller-mvp.sh /secure/path/controller-vars.yml
 
 Set `aap_must_gather_kubeconfig_file` to a local service account kubeconfig
 before creating a runnable pilot template. The script reads that file and sends
-it to AAP as a secret credential input. Do not commit the kubeconfig or the
+it to the controller as a secret credential input. Do not commit the kubeconfig or the
 edited vars file.
 
 > [!WARNING]

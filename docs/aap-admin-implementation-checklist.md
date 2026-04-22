@@ -4,9 +4,9 @@ title: AAP Admin Implementation Checklist
 
 # AAP Admin Implementation Checklist
 
-Use this checklist when standing up the MVP in AAP for the first pilot cluster.
-It assumes the repo has already been synced to source control and that the
-platform team owns the OpenShift service account and AAP objects.
+Use this checklist when standing up the MVP in AAP or AWX for the first pilot
+cluster. It assumes the repo has already been synced to source control and that
+the platform team owns the OpenShift service account and controller objects.
 
 ## Cluster Access
 
@@ -22,8 +22,8 @@ platform team owns the OpenShift service account and AAP objects.
 - Build a kubeconfig for only that service account.
 - Do not use a personal cluster-admin kubeconfig except for homelab or
       temporary lab testing.
-- Store the kubeconfig outside this repo until it is entered into AAP.
-- Confirm the target cluster API is reachable from the AAP execution
+- Store the kubeconfig outside this repo until it is entered into the controller.
+- Confirm the target cluster API is reachable from the controller execution
       runtime.
 - Confirm from an equivalent runtime that the credential can run:
 
@@ -48,8 +48,8 @@ platform team owns the OpenShift service account and AAP objects.
 - Confirm `must-gather-clean version` works inside the EE.
 - Confirm the EE can reach the OpenShift API endpoint.
 - Confirm the EE can reach the S3-compatible object storage endpoint.
-- Register the EE in AAP as `ocp-mustgather-ee` or update the Job Template
-      name consistently.
+- Register the EE in the controller as `ocp-mustgather-ee` or update the Job
+      Template name consistently.
 
 ## Artifact Storage
 
@@ -62,15 +62,15 @@ platform team owns the OpenShift service account and AAP objects.
       shareable artifact.
 - Do not expose artifact path selection in the survey.
 
-## AAP Project And Inventory
+## Controller Project And Inventory
 
-- Create an AAP Project pointing to this repo.
+- Create a controller Project pointing to this repo.
 - Sync the Project to the intended revision.
 - Confirm `playbooks/ocp_must_gather.yml` is visible in the Project.
 - Create a static localhost inventory.
 - Add host `localhost` with `ansible_connection: local`.
 
-## AAP Credential
+## Controller Credential
 
 - Create the custom credential type from
       `aap/custom-credential-type-openshift-kubeconfig.yml`.
@@ -126,7 +126,7 @@ platform team owns the OpenShift service account and AAP objects.
 - Do not add fields for cluster selection, command flags, image, namespace,
       credential, output path, arbitrary cleaner flags, or must-gather-clean
       configuration.
-- If the AAP version supports survey regex validation, enforce:
+- If the controller version supports survey regex validation, enforce:
 
   ```text
   support_case_id: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
@@ -156,6 +156,6 @@ platform team owns the OpenShift service account and AAP objects.
       is enabled.
 - Confirm `report.yaml` is not present in the archive.
 - Confirm the archive can be retrieved and opened.
-- Confirm AAP job history shows who launched the job and when.
+- Confirm controller job history shows who launched the job and when.
 - Launch once as a pilot dev user with execute-only access.
 - Confirm the dev user cannot edit the Job Template or view the credential.

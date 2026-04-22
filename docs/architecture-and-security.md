@@ -1,12 +1,12 @@
 ---
-title: AAP OpenShift Must-Gather MVP
+title: Architecture And Security Reference
 ---
 
-# AAP OpenShift must-gather MVP
+# Architecture And Security Reference
 
 ## Purpose
 
-This MVP proves a controlled brokered-execution model in AAP:
+This reference explains the controlled brokered-execution model in AAP or AWX:
 
 - Dev users can launch one predefined must-gather Job Template.
 - Dev users cannot modify the privileged playbook logic.
@@ -40,7 +40,7 @@ recommended model for real use.
 Production-like use should attach a kubeconfig for a dedicated platform-owned
 service account or equivalent non-human identity. That identity needs enough
 privilege to run must-gather. In many clusters this is effectively
-cluster-admin. The control boundary comes from AAP/AWX protecting that
+cluster-admin. The control boundary comes from the controller protecting that
 credential and allowing dev users to execute only the fixed Job Template.
 
 The implementation only accepts metadata:
@@ -119,14 +119,14 @@ raw must-gather directory is not the handoff artifact.
 For this MVP, `/runner/artifacts/ocp-must-gather` is the local staging
 location before object storage upload. It must have enough space for the final
 archive while the job is running. Users retrieve the archive from object
-storage, not from AWX runner storage. Do not expose
+storage, not from controller runner storage. Do not expose
 `ocp_must_gather_output_root` in the survey.
 
 > **Important**
 >
-> AAP is the control and audit plane. It records who launched the job, when,
+> The controller is the control and audit plane. It records who launched the job, when,
 > and with what inputs. Object storage is the artifact handoff plane. Dev users
-> retrieve the archive from object storage, not from AAP job artifacts.
+> retrieve the archive from object storage, not from controller job artifacts.
 
 Object storage is the preferred download handoff plane. When enabled, object
 keys use this pattern:
@@ -145,151 +145,18 @@ The job emits both an `s3://<bucket>/<key>` reference and a URL-shaped
 `<endpoint>/<bucket>/<key>` reference. The URL shape is a handoff reference,
 not a presigned URL.
 
-## AAP Objects
+## Deployment References
 
-Use `docs/aap-setup-runbook.md` for the step-by-step AAP rollout and
-`docs/aap-admin-implementation-checklist.md` as the implementation tracker.
+This document explains the model and security boundary. It intentionally does
+not duplicate the full controller setup.
 
-### Project
-
-Create an AAP Project that points at this repo.
-
-Recommended settings:
-
-- Name: `ocp-mustgather-aap`
-- SCM branch: `main`
-- Update Revision on Launch: enabled for the pilot
-
-### Inventory
-
-Use a static inventory with one host:
-
-```yaml
-all:
-  hosts:
-    localhost:
-      ansible_connection: local
-```
-
-The included sample is `inventories/localhost.yml`.
-
-### Credential
-
-Create the custom credential type from:
-
-```text
-aap/custom-credential-type-openshift-kubeconfig.yml
-```
-
-Create one credential from that type:
-
-- Name: `mustgather-clustera-sa`
-- Owner: platform team
-- Contents: kubeconfig for the OpenShift service account authorized to run
-  must-gather
-
-For homelab testing only, this kubeconfig may belong to a personal
-cluster-admin user. For any real pilot, use a dedicated service account or
-equivalent platform-owned non-human identity. Do not store kubeconfig, tokens,
-CA bundles, or private cluster endpoints in this repo.
-
-For object storage upload, create the custom credential type from:
-
-```text
-aap/custom-credential-type-s3-object-store.yml
-```
-
-Create one credential from that type:
-
-- Name: `mustgather-artifact-s3`
-- Owner: platform team
-- Contents: S3-compatible access key, secret key, and optional region
-
-Do not grant dev users access to this credential.
-
-### Execution Environment
-
-The execution environment must contain:
-
-- `oc`
-- `tar`
-- `must-gather-clean`
-- `amazon.aws` collection
-- `boto3`
-- `botocore`
-- `find`
-- `mv`
-- Ansible core
-
-A minimal EE build example is provided:
-
-```text
-ee/Containerfile
-```
-
-Build and publish it according to your registry process. Confirm it works:
-
-```bash
-oc version --client=true
-tar --version
-must-gather-clean version
-python3 -c "import boto3, botocore"
-ansible-doc amazon.aws.s3_object >/dev/null
-```
-
-### Job Template
-
-Create one Job Template:
-
-- Name: `OpenShift Must-Gather - ClusterA`
-- Project: `ocp-mustgather-aap`
-- Playbook: `playbooks/ocp_must_gather.yml`
-- Inventory: the localhost inventory
-- Credentials: `mustgather-clustera-sa` and `mustgather-artifact-s3` when
-  object storage upload is enabled
-- Execution Environment: image containing `oc`, `tar`, and
-  `must-gather-clean`
-- Enable survey: yes
-- Prompt on launch for credentials, inventory, and variables: no
-- Allow simultaneous jobs: no
-- Timeout: `7200` seconds for the pilot, or another value longer than
-  `ocp_must_gather_command_timeout`
-
-Set platform-owned extra vars:
-
-```yaml
-ocp_must_gather_cluster_name: clustera
-ocp_must_gather_output_root: /runner/artifacts/ocp-must-gather
-ocp_must_gather_clean_config: /runner/project/config/must-gather-clean/openshift_default.yaml
-ocp_must_gather_s3_upload_enabled: true
-ocp_must_gather_s3_endpoint_url: https://s3.example.invalid
-ocp_must_gather_s3_bucket: must-gather-artifacts
-ocp_must_gather_s3_region: us-east-1
-ocp_must_gather_s3_prefix: must-gather
-ocp_must_gather_s3_validate_certs: true
-```
-
-Use `aap/job-template-example.yml` as the desired object shape if you manage
-AAP objects as code.
-
-### Survey
-
-Create exactly these survey fields for the MVP:
-
-| Field | Variable | Required | Type |
-|---|---|---:|---|
-| Red Hat support case ID | `support_case_id` | yes | text |
-| Short reference label | `reference_label` | no | text |
-| Run must-gather-clean | `ocp_must_gather_clean_enabled` | yes | multiple choice, `false` or `true`, default `false` |
-
-If your AAP version supports survey regex validation, use:
-
-```text
-support_case_id: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
-reference_label: ^$|^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$
-```
-
-The playbook also enforces these patterns.
+- Use `docs/deployment-guide.md` to create the workflow in an existing
+  AWX or AAP controller.
+- Use `docs/aap-setup-runbook.md` for the detailed platform-admin setup
+  sequence.
+- Use `docs/aap-admin-implementation-checklist.md` as the rollout tracker.
+- Use `docs/internal-validation-checklist.md` for internal platform validation
+  after deployment.
 
 ## RBAC Intent
 
@@ -334,24 +201,24 @@ template internals.
    `oc whoami` must show the service account or non-human identity intended
    for this workflow. If it shows a personal user, treat that as lab-only.
 
-5. Create the custom AAP credential type and credential.
-6. Create or sync the AAP Project from this repo.
+5. Create the custom credential type and credential.
+6. Create or sync the controller Project from this repo.
 7. Create the localhost inventory.
 8. Create the Job Template and survey.
 9. Grant dev pilot team Execute on the Job Template only.
 10. Launch a platform test run.
 11. Confirm the archive exists at the printed path.
 12. Confirm the archive uploaded to the printed object storage reference.
-13. Confirm the AAP Jobs page and Activity Stream show who launched the job.
+13. Confirm the controller Jobs page and Activity Stream show who launched the job.
 14. Run a pilot test as a dev user.
 
 Use `docs/aap-setup-runbook.md` for exact object setup and
-`docs/pilot-validation-checklist.md` for the admin-led and dev-user validation
+`docs/internal-validation-checklist.md` for the admin-led and dev-user validation
 passes.
 
 ## Dev User Runbook
 
-1. Open AAP.
+1. Open the controller.
 2. Launch `OpenShift Must-Gather - ClusterA`.
 3. Enter the Red Hat support case ID.
 4. Optionally enter a short reference label.
