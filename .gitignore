@@ -64,6 +64,10 @@ ee/oc
 ee/context/
 ee/_build/
 docs/_site/
+_site/
+docs/Gemfile.lock
 docs/.jekyll-cache/
 docs/.bundle/
 docs/vendor/
+docs/_scripts/node_modules/
+node_modules/

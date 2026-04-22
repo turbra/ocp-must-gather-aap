@@ -84,7 +84,8 @@ The Job Template runs as the OpenShift identity represented by the attached
 kubeconfig credential. If you attach a personal cluster-admin kubeconfig, every
 must-gather job is effectively running as that user.
 
-> [!WARNING]
+> **Warning**
+>
 > Do not use a personal cluster-admin kubeconfig for real pilots. Use a
 > dedicated platform-owned service account or equivalent non-human identity.
 
@@ -177,7 +178,8 @@ Default output root:
 /runner/artifacts/ocp-must-gather
 ```
 
-> [!NOTE]
+> **Note**
+>
 > The local path is temporary staging before upload. Dev users retrieve the
 > archive from object storage, not from the runner filesystem.
 
@@ -193,7 +195,8 @@ work directory and are removed after a successful run when cleanup is enabled.
 When it is false, which is the survey default, the final archive is the raw
 must-gather output and is named with `must-gather_raw_...`.
 
-> [!CAUTION]
+> **Caution**
+>
 > `must-gather-clean` writes `report.yaml`, which maps obfuscated values back
 > to originals. Do not share this file. It is deliberately excluded from the
 > handoff archive.
@@ -358,7 +361,8 @@ The standalone final survey definition is:
 aap/survey-spec.yml
 ```
 
-> [!TIP]
+> **Tip**
+>
 > Creating controller objects from the CLI is the preferred method. The manual
 > steps in this runbook are a fallback for learning or troubleshooting.
 
@@ -479,9 +483,9 @@ Pilot dev team must not receive:
 
 Validate by logging in as a pilot dev user before the live pilot.
 
-## 12. Run Admin Smoke Test
+## 12. Run Initial Validation
 
-Launch the Job Template as a platform admin with:
+Run the standard path first as a platform admin:
 
 ```text
 support_case_id=TEST123
@@ -491,29 +495,39 @@ ocp_must_gather_clean_enabled=false
 
 Confirm:
 
-- Input validation passes.
+- The job reaches Ansible.
 - `KUBECONFIG` preflight passes.
-- `oc version --client=true` passes.
-- `tar --version` passes.
-- `must-gather-clean version` passes when cleaning is enabled.
-- `oc whoami` prints the expected service account identity.
-- `oc whoami` does not print a personal user unless this is an intentional
+- `oc whoami` prints the expected service account or non-human identity.
+- `oc whoami` does not print a personal user unless this is a documented
   homelab or temporary lab run.
 - `oc auth can-i '*' '*' --all-namespaces` returns `yes`.
-- Must-gather completes.
-- must-gather-clean completes when cleaning is enabled.
-- A `.tar.gz` archive is created under the selected output root.
+- `oc adm must-gather` completes.
+- A `must-gather_raw_...tar.gz` archive is created under the selected output
+  root.
 - The archive uploads to object storage when upload is enabled.
-- The standard smoke test produces a `must-gather_raw_...` archive when
-  cleaning is disabled.
-- The archive is named `must-gather_cleaned_...` when cleaning is enabled.
-- `report.yaml` is not included in the archive.
 - Job output prints the final local artifact path.
 - Job output prints the object storage reference.
 - Job stats include `must_gather_artifact_path`.
 - Job stats include `must_gather_s3_uri` when upload is enabled.
 
-## 13. Run Dev Pilot Test
+After the standard path succeeds, run a cleaning-enabled validation only if the
+EE includes `must-gather-clean` and the platform wants to validate sanitization:
+
+```text
+support_case_id=TEST124
+reference_label=clean-smoke
+ocp_must_gather_clean_enabled=true
+```
+
+Confirm:
+
+- `oc adm must-gather` completes before cleaning starts.
+- must-gather-clean runs with the platform-owned config.
+- A `must-gather_cleaned_...tar.gz` archive is created only when cleaned output
+  is valid.
+- `report.yaml` is not included in the archive.
+
+## 13. Validate Dev Access And Audit
 
 Log in as a pilot dev user and confirm:
 
@@ -527,9 +541,7 @@ Log in as a pilot dev user and confirm:
 
 Launch once and confirm the artifact is produced and retrievable.
 
-## 14. Confirm Audit Trail
-
-For both admin and dev test runs, confirm AAP records:
+For the admin and dev test runs, confirm AAP records:
 
 - Individual user who launched the job.
 - Launch timestamp.

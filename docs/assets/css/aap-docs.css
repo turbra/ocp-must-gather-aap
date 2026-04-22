@@ -302,6 +302,7 @@ a:focus {
   display: table;
   width: 100%;
   border-collapse: collapse;
+  overflow-wrap: anywhere;
 }
 
 .markdown-body table th,

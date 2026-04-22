@@ -118,7 +118,8 @@ completes, against the generated must-gather directory.
 
 Two paths are supported for creating the required controller objects.
 
-> [!TIP]
+> **Tip**
+>
 > The command-line path is preferred. If the apply script completes without
 > errors, skip sections 2 through 8 and continue from section 9.
 
@@ -262,7 +263,8 @@ Create one credential:
 This kubeconfig is the cluster identity for every job launch. Verify it with
 `oc whoami` before attaching it to the Job Template.
 
-> [!WARNING]
+> **Warning**
+>
 > Do not use a personal cluster-admin kubeconfig for real pilots. Use a
 > dedicated platform-owned service account. If `oc whoami` shows a personal
 > user, treat that credential as lab-only.
@@ -300,7 +302,8 @@ The default Job Template extra var is:
 ocp_must_gather_output_root: /runner/artifacts/ocp-must-gather
 ```
 
-> [!NOTE]
+> **Note**
+>
 > The local path is temporary staging before upload. Dev users retrieve the
 > archive from object storage, not from the runner filesystem.
 
@@ -325,7 +328,8 @@ When cleaning is enabled, the final archive contains the cleaned must-gather
 output. The raw must-gather directory remains only in the controlled work
 directory and is removed after a successful run when cleanup is enabled.
 
-> [!CAUTION]
+> **Caution**
+>
 > `must-gather-clean` writes `report.yaml`, which maps obfuscated values back
 > to originals. Do not share this file. The playbook excludes it from the
 > handoff archive, but verify its absence before distributing the archive.
