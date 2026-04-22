@@ -1,0 +1,561 @@
+---
+- name: Validate support case input
+  ansible.builtin.assert:
+    that:
+      - support_case_id is defined
+      - support_case_id is string
+      - support_case_id | length >= 3
+      - support_case_id | length <= 64
+      - support_case_id is match('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+    fail_msg: >-
+      support_case_id is required and must be 3-64 characters using only
+      letters, numbers, underscore, or hyphen.
+
+- name: Validate optional reference label
+  ansible.builtin.assert:
+    that:
+      - reference_label | default('') is string
+      - reference_label | default('') | length <= 32
+      - >-
+        reference_label | default('') | length == 0
+        or reference_label | default('')
+        is match('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+    fail_msg: >-
+      reference_label must be empty or 1-32 characters using only letters,
+      numbers, underscore, or hyphen.
+
+- name: Normalize optional reference label
+  ansible.builtin.set_fact:
+    ocp_must_gather_reference_label: "{{ reference_label | default('') }}"
+
+- name: Record injected kubeconfig path
+  ansible.builtin.set_fact:
+    ocp_must_gather_kubeconfig_path: >-
+      {{ lookup('ansible.builtin.env', 'KUBECONFIG') }}
+
+- name: Validate platform-owned path and cluster settings
+  ansible.builtin.assert:
+    that:
+      - ocp_must_gather_cluster_name is match('^[A-Za-z0-9][A-Za-z0-9_-]*$')
+      - ocp_must_gather_output_root is match('^/')
+      - ocp_must_gather_work_root is match('^/')
+      - "'..' not in ocp_must_gather_output_root"
+      - "'..' not in ocp_must_gather_work_root"
+      - ocp_must_gather_command_timeout | int > 0
+      - ocp_must_gather_min_archive_bytes | int > 0
+      - ocp_must_gather_clean_enabled | string | lower in ['true', 'false']
+      - ocp_must_gather_clean_config is string
+      - ocp_must_gather_clean_config | length > 0
+      - >-
+        not ocp_must_gather_clean_enabled | bool
+        or ocp_must_gather_clean_config is match('^/')
+      - ocp_must_gather_s3_upload_enabled | string | lower in ['true', 'false']
+      - ocp_must_gather_s3_validate_certs | string | lower in ['true', 'false']
+      - ocp_must_gather_s3_prefix is string
+      - "'..' not in ocp_must_gather_s3_prefix"
+      - not ocp_must_gather_s3_prefix.startswith('/')
+      - not ocp_must_gather_s3_prefix.endswith('/')
+      - >-
+        not ocp_must_gather_s3_upload_enabled | bool
+        or ocp_must_gather_s3_endpoint_url is match('^https?://')
+      - >-
+        not ocp_must_gather_s3_upload_enabled | bool
+        or ocp_must_gather_s3_bucket is match('^[A-Za-z0-9][A-Za-z0-9._-]*$')
+      - >-
+        not ocp_must_gather_s3_upload_enabled | bool
+        or ocp_must_gather_s3_access_key | length > 0
+      - >-
+        not ocp_must_gather_s3_upload_enabled | bool
+        or ocp_must_gather_s3_secret_key | length > 0
+    fail_msg: Platform-owned must-gather settings are invalid.
+
+- name: Validate kubeconfig injected by AAP credential
+  ansible.builtin.assert:
+    that:
+      - ocp_must_gather_kubeconfig_path | length > 0
+    fail_msg: >-
+      KUBECONFIG is not set. Attach the platform-owned OpenShift must-gather
+      credential to the AAP Job Template.
+
+- name: Inspect injected kubeconfig file
+  ansible.builtin.stat:
+    path: "{{ ocp_must_gather_kubeconfig_path }}"
+  register: ocp_must_gather_kubeconfig_stat
+
+- name: Validate injected kubeconfig file is readable
+  ansible.builtin.assert:
+    that:
+      - ocp_must_gather_kubeconfig_stat.stat.exists
+      - ocp_must_gather_kubeconfig_stat.stat.isreg
+      - ocp_must_gather_kubeconfig_stat.stat.readable
+    fail_msg: >-
+      KUBECONFIG points to a missing or unreadable file. Check the custom AAP
+      credential type file injector and the attached must-gather credential.
+
+- name: Check oc client is available
+  ansible.builtin.command:
+    argv:
+      - oc
+      - version
+      - --client=true
+  changed_when: false
+
+- name: Check tar is available
+  ansible.builtin.command:
+    argv:
+      - tar
+      - --version
+  changed_when: false
+
+- name: Check must-gather-clean is available when cleaning is enabled
+  ansible.builtin.command:
+    argv:
+      - must-gather-clean
+      - version
+  changed_when: false
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Inspect platform-owned must-gather-clean config
+  ansible.builtin.stat:
+    path: "{{ ocp_must_gather_clean_config }}"
+  register: ocp_must_gather_clean_config_stat
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Validate platform-owned must-gather-clean config
+  ansible.builtin.assert:
+    that:
+      - ocp_must_gather_clean_config_stat.stat.exists
+      - ocp_must_gather_clean_config_stat.stat.isreg
+      - ocp_must_gather_clean_config_stat.stat.readable
+    fail_msg: >-
+      must-gather-clean is enabled, but the platform-owned clean config is
+      missing or unreadable.
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Confirm OpenShift identity from injected credential
+  ansible.builtin.command:
+    argv:
+      - oc
+      - whoami
+  register: ocp_must_gather_whoami
+  changed_when: false
+
+- name: Confirm credential has broad cluster access
+  ansible.builtin.command:
+    argv:
+      - oc
+      - auth
+      - can-i
+      - "*"
+      - "*"
+      - --all-namespaces
+  register: ocp_must_gather_can_i
+  changed_when: false
+  failed_when: ocp_must_gather_can_i.stdout | trim != "yes"
+
+- name: Create controlled output directory
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_output_root }}"
+    state: directory
+    mode: "0750"
+
+- name: Create controlled work directory root
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_work_root }}"
+    state: directory
+    mode: "0700"
+
+- name: Build controlled artifact names
+  ansible.builtin.set_fact:
+    ocp_must_gather_timestamp: >-
+      {{ lookup('ansible.builtin.pipe', 'date -u +%Y%m%dT%H%M%SZ') }}
+    ocp_must_gather_label_suffix: >-
+      {{
+        '_' ~ ocp_must_gather_reference_label
+        if ocp_must_gather_reference_label | length > 0
+        else ''
+      }}
+    ocp_must_gather_artifact_kind: >-
+      {{ 'cleaned' if ocp_must_gather_clean_enabled | bool else 'raw' }}
+
+- name: Build controlled artifact paths
+  ansible.builtin.set_fact:
+    ocp_must_gather_run_id: >-
+      must-gather_{{ ocp_must_gather_cluster_name }}_{{ support_case_id }}{{
+      ocp_must_gather_label_suffix }}_{{ ocp_must_gather_timestamp }}
+    ocp_must_gather_archive_dir_name: >-
+      must-gather_{{ ocp_must_gather_artifact_kind }}_{{
+      ocp_must_gather_cluster_name }}_{{ support_case_id }}{{
+      ocp_must_gather_label_suffix }}_{{ ocp_must_gather_timestamp }}
+    ocp_must_gather_archive_name: >-
+      must-gather_{{ ocp_must_gather_artifact_kind }}_{{
+      ocp_must_gather_cluster_name }}_{{ support_case_id }}{{
+      ocp_must_gather_label_suffix }}_{{ ocp_must_gather_timestamp }}.tar.gz
+
+- name: Set final paths
+  ansible.builtin.set_fact:
+    ocp_must_gather_run_root: >-
+      {{ ocp_must_gather_work_root }}/{{ ocp_must_gather_run_id }}
+    ocp_must_gather_raw_dir: >-
+      {{ ocp_must_gather_work_root }}/{{ ocp_must_gather_run_id }}/raw
+    ocp_must_gather_clean_dir: >-
+      {{ ocp_must_gather_work_root }}/{{ ocp_must_gather_run_id }}/{{
+      ocp_must_gather_archive_dir_name }}
+    ocp_must_gather_clean_report_dir: >-
+      {{ ocp_must_gather_work_root }}/{{ ocp_must_gather_run_id }}/clean-report
+    ocp_must_gather_clean_report_path: >-
+      {{ ocp_must_gather_work_root }}/{{ ocp_must_gather_run_id
+      }}/clean-report/{{ ocp_must_gather_clean_report_filename }}
+    ocp_must_gather_archive_path: >-
+      {{ ocp_must_gather_output_root }}/{{ ocp_must_gather_archive_name }}
+    ocp_must_gather_archive_tmp: >-
+      {{ ocp_must_gather_output_root }}/.{{ ocp_must_gather_archive_name }}.tmp
+
+- name: Select archive source directory
+  ansible.builtin.set_fact:
+    ocp_must_gather_archive_source_dir: >-
+      {{
+        ocp_must_gather_clean_dir
+        if ocp_must_gather_clean_enabled | bool
+        else ocp_must_gather_raw_dir
+      }}
+
+- name: Create controlled must-gather raw directory
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_raw_dir }}"
+    state: directory
+    mode: "0700"
+
+- name: Run fixed OpenShift must-gather command
+  ansible.builtin.command:
+    argv:
+      - oc
+      - adm
+      - must-gather
+      - --dest-dir
+      - "{{ ocp_must_gather_raw_dir }}"
+  async: "{{ ocp_must_gather_command_timeout }}"
+  poll: 15
+  register: ocp_must_gather_result
+  changed_when: true
+
+- name: Verify must-gather produced files
+  ansible.builtin.command:
+    argv:
+      - find
+      - "{{ ocp_must_gather_raw_dir }}"
+      - -mindepth
+      - "1"
+      - -print
+      - -quit
+  register: ocp_must_gather_generated_files
+  changed_when: false
+  failed_when: ocp_must_gather_generated_files.stdout | length == 0
+
+- name: Locate generated must-gather content file
+  ansible.builtin.command:
+    argv:
+      - find
+      - "{{ ocp_must_gather_raw_dir }}"
+      - -mindepth
+      - "1"
+      - -type
+      - f
+      - "!"
+      - -name
+      - event-filter.html
+      - -print
+      - -quit
+  register: ocp_must_gather_content_file
+  changed_when: false
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Select must-gather-clean input directory
+  ansible.builtin.set_fact:
+    ocp_must_gather_content_relative_path: >-
+      {{
+        ocp_must_gather_content_file.stdout
+        | replace(ocp_must_gather_raw_dir ~ '/', '')
+      }}
+    ocp_must_gather_clean_input_dir: >-
+      {{
+        ocp_must_gather_raw_dir ~ '/' ~ (
+          (
+            ocp_must_gather_content_file.stdout
+            | replace(ocp_must_gather_raw_dir ~ '/', '')
+          ).split('/')[0]
+        )
+        if (
+          ocp_must_gather_content_file.stdout | length > 0
+          and '/' in (
+            ocp_must_gather_content_file.stdout
+            | replace(ocp_must_gather_raw_dir ~ '/', '')
+          )
+        )
+        else ocp_must_gather_raw_dir
+      }}
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Create controlled must-gather-clean report directory
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_clean_report_dir }}"
+    state: directory
+    mode: "0700"
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Create controlled must-gather-clean output directory
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_clean_dir }}"
+    state: directory
+    mode: "0700"
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Run fixed must-gather-clean command
+  ansible.builtin.command:
+    argv:
+      - must-gather-clean
+      - -c
+      - "{{ ocp_must_gather_clean_config }}"
+      - -i
+      - "{{ ocp_must_gather_clean_input_dir }}"
+      - -o
+      - "{{ ocp_must_gather_clean_dir }}"
+      - -r
+      - "{{ ocp_must_gather_clean_report_dir }}"
+      - -d
+  register: ocp_must_gather_clean_result
+  changed_when: true
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Verify cleaned must-gather produced files
+  ansible.builtin.command:
+    argv:
+      - find
+      - "{{ ocp_must_gather_clean_dir }}"
+      - -mindepth
+      - "1"
+      - -print
+      - -quit
+  register: ocp_must_gather_cleaned_files
+  changed_when: false
+  failed_when: ocp_must_gather_cleaned_files.stdout | length == 0
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Inspect must-gather-clean report
+  ansible.builtin.stat:
+    path: "{{ ocp_must_gather_clean_report_path }}"
+  register: ocp_must_gather_clean_report_stat
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Validate must-gather-clean report stayed outside handoff directory
+  ansible.builtin.assert:
+    that:
+      - ocp_must_gather_clean_report_stat.stat.exists
+      - ocp_must_gather_clean_report_stat.stat.isreg
+      - >-
+        not ocp_must_gather_clean_report_path.startswith(
+          ocp_must_gather_archive_source_dir ~ '/'
+        )
+    fail_msg: >-
+      must-gather-clean report.yaml was not created in the controlled report
+      directory. Do not share the clean report with the handoff artifact.
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Ensure must-gather-clean report is not in cleaned handoff directory
+  ansible.builtin.command:
+    argv:
+      - find
+      - "{{ ocp_must_gather_clean_dir }}"
+      - -name
+      - "{{ ocp_must_gather_clean_report_filename }}"
+      - -print
+      - -quit
+  register: ocp_must_gather_clean_report_in_handoff
+  changed_when: false
+  failed_when: ocp_must_gather_clean_report_in_handoff.stdout | length > 0
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Remove any stale temporary archive
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_archive_tmp }}"
+    state: absent
+
+- name: Archive must-gather output
+  ansible.builtin.command:
+    argv:
+      - tar
+      - -C
+      - "{{ ocp_must_gather_run_root }}"
+      - -czf
+      - "{{ ocp_must_gather_archive_tmp }}"
+      - "{{ ocp_must_gather_archive_source_dir | basename }}"
+  register: ocp_must_gather_archive_result
+  changed_when: true
+
+- name: Move archive into final location
+  ansible.builtin.command:
+    argv:
+      - mv
+      - "{{ ocp_must_gather_archive_tmp }}"
+      - "{{ ocp_must_gather_archive_path }}"
+  changed_when: true
+
+- name: Verify archive exists and is not empty
+  ansible.builtin.stat:
+    path: "{{ ocp_must_gather_archive_path }}"
+  register: ocp_must_gather_archive_stat
+  failed_when:
+    - not ocp_must_gather_archive_stat.stat.exists
+      or ocp_must_gather_archive_stat.stat.size
+      < ocp_must_gather_min_archive_bytes | int
+
+- name: Build S3 artifact object reference
+  ansible.builtin.set_fact:
+    ocp_must_gather_s3_prefix_normalized: >-
+      {{ ocp_must_gather_s3_prefix | regex_replace('^/+|/+$', '') }}
+    ocp_must_gather_s3_endpoint_normalized: >-
+      {{ ocp_must_gather_s3_endpoint_url | regex_replace('/+$', '') }}
+  when: ocp_must_gather_s3_upload_enabled | bool
+
+- name: Build S3 artifact object key
+  ansible.builtin.set_fact:
+    ocp_must_gather_s3_object_key: >-
+      {{
+        [
+          ocp_must_gather_s3_prefix_normalized,
+          ocp_must_gather_cluster_name,
+          ocp_must_gather_archive_name
+        ]
+        | reject('equalto', '')
+        | join('/')
+      }}
+  when: ocp_must_gather_s3_upload_enabled | bool
+
+- name: Build S3 artifact URL reference
+  ansible.builtin.set_fact:
+    ocp_must_gather_s3_uri: >-
+      s3://{{ ocp_must_gather_s3_bucket }}/{{
+      ocp_must_gather_s3_object_key }}
+    ocp_must_gather_s3_url: >-
+      {{ ocp_must_gather_s3_endpoint_normalized }}/{{
+      ocp_must_gather_s3_bucket }}/{{ ocp_must_gather_s3_object_key }}
+  when: ocp_must_gather_s3_upload_enabled | bool
+
+- name: Upload final artifact to S3-compatible storage
+  amazon.aws.s3_object:
+    access_key: "{{ ocp_must_gather_s3_access_key }}"
+    secret_key: "{{ ocp_must_gather_s3_secret_key }}"
+    endpoint_url: "{{ ocp_must_gather_s3_endpoint_url }}"
+    bucket: "{{ ocp_must_gather_s3_bucket }}"
+    object: "{{ ocp_must_gather_s3_object_key }}"
+    src: "{{ ocp_must_gather_archive_path }}"
+    mode: put
+    overwrite: always
+    encrypt: false
+    region: >-
+      {{
+        ocp_must_gather_s3_region
+        if ocp_must_gather_s3_region | length > 0
+        else omit
+      }}
+    validate_certs: "{{ ocp_must_gather_s3_validate_certs | bool }}"
+  no_log: true
+  when: ocp_must_gather_s3_upload_enabled | bool
+
+- name: Confirm S3-compatible artifact upload completed
+  ansible.builtin.debug:
+    msg:
+      - "Artifact upload completed."
+      - "Object: {{ ocp_must_gather_s3_uri }}"
+      - "URL reference: {{ ocp_must_gather_s3_url }}"
+  when: ocp_must_gather_s3_upload_enabled | bool
+
+- name: Clean successful work directory
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_run_root }}"
+    state: absent
+  when: ocp_must_gather_cleanup_work_dir | bool
+
+- name: Publish must-gather artifact details to AAP job stats
+  ansible.builtin.set_stats:
+    data:
+      must_gather_artifact_path: "{{ ocp_must_gather_archive_path }}"
+      must_gather_artifact_size_bytes: >-
+        {{ ocp_must_gather_archive_stat.stat.size }}
+      must_gather_artifact_kind: "{{ ocp_must_gather_artifact_kind }}"
+      must_gather_clean_enabled: "{{ ocp_must_gather_clean_enabled | bool }}"
+      must_gather_s3_upload_enabled: >-
+        {{ ocp_must_gather_s3_upload_enabled | bool }}
+      must_gather_s3_uri: >-
+        {{
+          ocp_must_gather_s3_uri
+          if ocp_must_gather_s3_upload_enabled | bool
+          else ''
+        }}
+      must_gather_s3_url: >-
+        {{
+          ocp_must_gather_s3_url
+          if ocp_must_gather_s3_upload_enabled | bool
+          else ''
+        }}
+      ocp_must_gather_cluster_name: "{{ ocp_must_gather_cluster_name }}"
+      support_case_id: "{{ support_case_id }}"
+
+- name: Print must-gather artifact reference
+  ansible.builtin.debug:
+    msg:
+      - "OpenShift must-gather completed."
+      - >-
+        Launched as OpenShift identity:
+        {{ ocp_must_gather_whoami.stdout | trim }}
+      - "Artifact kind: {{ ocp_must_gather_artifact_kind }}"
+      - "Artifact: {{ ocp_must_gather_archive_path }}"
+      - "Size bytes: {{ ocp_must_gather_archive_stat.stat.size }}"
+      - >-
+        Object storage:
+        {{
+          ocp_must_gather_s3_uri
+          if ocp_must_gather_s3_upload_enabled | bool
+          else 'not enabled'
+        }}
+      - >-
+        Download reference:
+        {{
+          ocp_must_gather_s3_url
+          if ocp_must_gather_s3_upload_enabled | bool
+          else 'not enabled'
+        }}
+      - >-
+        must-gather-clean report:
+        {{
+          'removed with the successful work directory'
+          if ocp_must_gather_cleanup_work_dir | bool
+          else ocp_must_gather_clean_report_path ~ ' (local-only; do not share)'
+        }}
+  when: ocp_must_gather_clean_enabled | bool
+
+- name: Print raw must-gather artifact reference
+  ansible.builtin.debug:
+    msg:
+      - "OpenShift must-gather completed."
+      - >-
+        Launched as OpenShift identity:
+        {{ ocp_must_gather_whoami.stdout | trim }}
+      - "Artifact kind: {{ ocp_must_gather_artifact_kind }}"
+      - "Artifact: {{ ocp_must_gather_archive_path }}"
+      - "Size bytes: {{ ocp_must_gather_archive_stat.stat.size }}"
+      - >-
+        Object storage:
+        {{
+          ocp_must_gather_s3_uri
+          if ocp_must_gather_s3_upload_enabled | bool
+          else 'not enabled'
+        }}
+      - >-
+        Download reference:
+        {{
+          ocp_must_gather_s3_url
+          if ocp_must_gather_s3_upload_enabled | bool
+          else 'not enabled'
+        }}
+  when: not ocp_must_gather_clean_enabled | bool

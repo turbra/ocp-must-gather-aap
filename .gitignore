@@ -1,0 +1,69 @@
+awx/
+awx-devel/
+
+# Local controller/apply variables and overrides.
+aap/controller-vars.yml
+aap/controller-vars.yaml
+aap/controller-vars.local.yml
+aap/controller-vars.local.yaml
+aap/controller-vars-*.yml
+aap/controller-vars-*.yaml
+controller-vars.yml
+controller-vars.yaml
+controller-vars.local.yml
+controller-vars.local.yaml
+controller-vars-*.yml
+controller-vars-*.yaml
+*.local.yml
+*.local.yaml
+local-*.yml
+local-*.yaml
+
+# Environment files and credentials.
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.token
+*.secret
+
+# Kubeconfigs and local credential bundles.
+kubeconfig
+kubeconfig.*
+kubeconfig-*
+*.kubeconfig
+*.kubeconfig.*
+credentials.yml
+credentials.yaml
+secrets.yml
+secrets.yaml
+
+# Generated must-gather archives and extracted output.
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+must-gather_*
+ocp-must-gather-runs/
+runner/
+artifacts/
+tmp/
+
+# Local Ansible and Python state.
+.ansible/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Execution environment and docs build output.
+ee/oc
+ee/context/
+ee/_build/
+docs/_site/
+docs/.jekyll-cache/
+docs/.bundle/
+docs/vendor/

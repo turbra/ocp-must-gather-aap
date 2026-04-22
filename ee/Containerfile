@@ -1,0 +1,46 @@
+FROM quay.io/ansible/awx-ee:latest
+ARG OPENSHIFT_CLIENT_VERSION=4.20.16
+ARG OPENSHIFT_CLIENT_LINUX_AMD64_SHA256=e7eca1f6d4c9a3a4f59d24bfff6197c8780ed22db508fef499c2fdc37e912406
+ARG OPENSHIFT_CLIENT_LINUX_ARM64_SHA256=1d7b59e68b9c59d0be893023d8ef70048da3932b695a0654c2e741beee3f0994
+ARG MUST_GATHER_CLEAN_VERSION=v0.0.4
+ARG TARGETARCH=amd64
+USER root
+COPY requirements.yml /tmp/requirements.yml
+COPY requirements.txt /tmp/requirements.txt
+RUN dnf -y install python3-pip && \
+    python3 -m pip install --no-cache-dir -r /tmp/requirements.txt && \
+    ansible-galaxy collection install -p /usr/share/ansible/collections \
+      -r /tmp/requirements.yml && \
+    case "${TARGETARCH}" in \
+      amd64) \
+        oc_archive="openshift-client-linux-${OPENSHIFT_CLIENT_VERSION}.tar.gz"; \
+        oc_sha256="${OPENSHIFT_CLIENT_LINUX_AMD64_SHA256}" ;; \
+      arm64) \
+        oc_archive="openshift-client-linux-arm64-${OPENSHIFT_CLIENT_VERSION}.tar.gz"; \
+        oc_sha256="${OPENSHIFT_CLIENT_LINUX_ARM64_SHA256}" ;; \
+      *) echo "Unsupported OpenShift client arch: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSL \
+      "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OPENSHIFT_CLIENT_VERSION}/${oc_archive}" \
+      -o /tmp/openshift-client.tar.gz && \
+    echo "${oc_sha256}  /tmp/openshift-client.tar.gz" | sha256sum -c - && \
+    tar -xzf /tmp/openshift-client.tar.gz -C /usr/local/bin oc && \
+    chmod 755 /usr/local/bin/oc && \
+    rm -f /tmp/openshift-client.tar.gz && \
+    case "${TARGETARCH}" in \
+      amd64|arm64) must_gather_clean_arch="${TARGETARCH}" ;; \
+      *) echo "Unsupported must-gather-clean arch: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSL \
+      "https://github.com/openshift/must-gather-clean/releases/download/${MUST_GATHER_CLEAN_VERSION}/must-gather-clean-linux-${must_gather_clean_arch}.tar.gz" \
+      -o /tmp/must-gather-clean.tar.gz && \
+    tar -xzf /tmp/must-gather-clean.tar.gz -C /usr/local/bin must-gather-clean && \
+    chmod 755 /usr/local/bin/must-gather-clean && \
+    rm -f /tmp/must-gather-clean.tar.gz && \
+    oc version --client=true && \
+    tar --version && \
+    must-gather-clean version && \
+    python3 -c "import boto3, botocore" && \
+    ansible-doc amazon.aws.s3_object >/dev/null && \
+    dnf clean all
+USER 1000

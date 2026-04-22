@@ -1,0 +1,310 @@
+---
+- name: Configure AAP objects for the OpenShift must-gather MVP
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    aap_must_gather_project_name: ocp-mustgather-aap
+    aap_must_gather_inventory_name: clustera-localhost
+    aap_must_gather_credential_type_name: OpenShift Must-Gather Kubeconfig
+    aap_must_gather_credential_name: mustgather-clustera-sa
+    aap_must_gather_s3_credential_type_name: S3 Object Store Access
+    aap_must_gather_s3_credential_name: mustgather-artifact-s3
+    aap_must_gather_execution_environment_name: ocp-mustgather-ee
+    aap_must_gather_job_template_name: OpenShift Must-Gather - ClusterA
+    aap_must_gather_project_scm_type: git
+    aap_must_gather_project_scm_branch: main
+    aap_must_gather_project_local_path: ocp-mustgather-aap
+    aap_must_gather_cluster_name: clustera
+    aap_must_gather_output_root: /runner/artifacts/ocp-must-gather
+    aap_must_gather_clean_config: >-
+      /runner/project/config/must-gather-clean/openshift_default.yaml
+    aap_must_gather_s3_upload_enabled: false
+    aap_must_gather_s3_endpoint_url: https://s3.example.invalid
+    aap_must_gather_s3_bucket: must-gather-artifacts
+    aap_must_gather_s3_region: us-east-1
+    aap_must_gather_s3_prefix: must-gather
+    aap_must_gather_s3_validate_certs: true
+    aap_must_gather_job_timeout: 7200
+    aap_must_gather_command_timeout: 3600
+    aap_must_gather_execution_environment_pull: missing
+    aap_must_gather_pilot_team_name: ""
+    aap_must_gather_kubeconfig_file: ""
+    aap_must_gather_s3_access_key: ""
+    aap_must_gather_s3_secret_key: ""
+    aap_must_gather_credential_type_file: >-
+      {{ playbook_dir }}/../custom-credential-type-openshift-kubeconfig.yml
+    aap_must_gather_s3_credential_type_file: >-
+      {{ playbook_dir }}/../custom-credential-type-s3-object-store.yml
+
+  tasks:
+    - name: Validate required controller rollout inputs
+      ansible.builtin.assert:
+        that:
+          - aap_controller_organization is defined
+          - aap_controller_organization | length > 0
+          - aap_must_gather_project_scm_type in ['git', 'manual']
+          - >-
+            aap_must_gather_project_scm_type == 'manual'
+            or (
+              aap_must_gather_project_scm_url is defined
+              and aap_must_gather_project_scm_url | length > 0
+            )
+          - >-
+            aap_must_gather_project_scm_type == 'git'
+            or (
+              aap_must_gather_project_local_path is defined
+              and aap_must_gather_project_local_path | length > 0
+            )
+          - aap_must_gather_execution_environment_image is defined
+          - aap_must_gather_execution_environment_image | length > 0
+          - >-
+            not aap_must_gather_s3_upload_enabled | bool
+            or aap_must_gather_s3_endpoint_url is match('^https?://')
+          - >-
+            not aap_must_gather_s3_upload_enabled | bool
+            or aap_must_gather_s3_bucket | length > 0
+          - >-
+            not aap_must_gather_s3_upload_enabled | bool
+            or aap_must_gather_s3_access_key | length > 0
+          - >-
+            not aap_must_gather_s3_upload_enabled | bool
+            or aap_must_gather_s3_secret_key | length > 0
+        fail_msg: >-
+          Required rollout inputs are missing. Copy
+          aap/controller-vars.example.yml to a local vars file, then set
+          organization, project source, EE image, and optionally kubeconfig
+          file path and S3 upload settings.
+
+    - name: Load custom credential type definition
+      ansible.builtin.include_vars:
+        file: "{{ aap_must_gather_credential_type_file }}"
+        name: aap_must_gather_credential_type_definition
+
+    - name: Load custom S3 credential type definition
+      ansible.builtin.include_vars:
+        file: "{{ aap_must_gather_s3_credential_type_file }}"
+        name: aap_must_gather_s3_credential_type_definition
+
+    - name: Read platform-owned kubeconfig for AAP credential
+      ansible.builtin.slurp:
+        src: "{{ aap_must_gather_kubeconfig_file }}"
+      register: aap_must_gather_kubeconfig
+      no_log: true
+      when: aap_must_gather_kubeconfig_file | length > 0
+
+    - name: Create custom OpenShift kubeconfig credential type
+      awx.awx.credential_type:
+        name: "{{ aap_must_gather_credential_type_name }}"
+        description: >-
+          {{ aap_must_gather_credential_type_definition.description }}
+        kind: "{{ aap_must_gather_credential_type_definition.kind }}"
+        inputs: "{{ aap_must_gather_credential_type_definition.inputs }}"
+        injectors: "{{ aap_must_gather_credential_type_definition.injectors }}"
+        state: present
+
+    - name: Create custom S3 object storage credential type
+      awx.awx.credential_type:
+        name: "{{ aap_must_gather_s3_credential_type_name }}"
+        description: >-
+          {{ aap_must_gather_s3_credential_type_definition.description }}
+        kind: "{{ aap_must_gather_s3_credential_type_definition.kind }}"
+        inputs: "{{ aap_must_gather_s3_credential_type_definition.inputs }}"
+        injectors: >-
+          {{ aap_must_gather_s3_credential_type_definition.injectors }}
+        state: present
+
+    - name: Register must-gather execution environment
+      awx.awx.execution_environment:
+        name: "{{ aap_must_gather_execution_environment_name }}"
+        image: "{{ aap_must_gather_execution_environment_image }}"
+        organization: "{{ aap_controller_organization }}"
+        pull: "{{ aap_must_gather_execution_environment_pull }}"
+        state: present
+
+    - name: Create or update SCM-backed must-gather project
+      awx.awx.project:
+        name: "{{ aap_must_gather_project_name }}"
+        organization: "{{ aap_controller_organization }}"
+        scm_type: git
+        scm_url: "{{ aap_must_gather_project_scm_url }}"
+        scm_branch: "{{ aap_must_gather_project_scm_branch }}"
+        scm_clean: true
+        scm_update_on_launch: true
+        update_project: true
+        wait: true
+        state: present
+      when: aap_must_gather_project_scm_type == 'git'
+
+    - name: Create or update manual must-gather project
+      awx.awx.project:
+        name: "{{ aap_must_gather_project_name }}"
+        organization: "{{ aap_controller_organization }}"
+        scm_type: manual
+        local_path: "{{ aap_must_gather_project_local_path }}"
+        state: present
+      when: aap_must_gather_project_scm_type == 'manual'
+
+    - name: Create localhost inventory
+      awx.awx.inventory:
+        name: "{{ aap_must_gather_inventory_name }}"
+        organization: "{{ aap_controller_organization }}"
+        state: present
+
+    - name: Create localhost inventory host
+      awx.awx.host:
+        name: localhost
+        inventory: "{{ aap_must_gather_inventory_name }}"
+        variables:
+          ansible_connection: local
+        state: present
+
+    - name: Create platform-owned must-gather kubeconfig credential
+      awx.awx.credential:
+        name: "{{ aap_must_gather_credential_name }}"
+        description: >-
+          Platform-owned OpenShift kubeconfig for the controlled must-gather
+          MVP. Do not grant dev users access to this credential.
+        organization: "{{ aap_controller_organization }}"
+        credential_type: "{{ aap_must_gather_credential_type_name }}"
+        inputs:
+          kubeconfig: "{{ aap_must_gather_kubeconfig.content | b64decode }}"
+        state: present
+      no_log: true
+      when: aap_must_gather_kubeconfig_file | length > 0
+
+    - name: Create platform-owned S3 object storage credential
+      awx.awx.credential:
+        name: "{{ aap_must_gather_s3_credential_name }}"
+        description: >-
+          Platform-owned S3-compatible storage credential for must-gather
+          artifact upload. Do not grant dev users access to this credential.
+        organization: "{{ aap_controller_organization }}"
+        credential_type: "{{ aap_must_gather_s3_credential_type_name }}"
+        inputs:
+          access_key: "{{ aap_must_gather_s3_access_key }}"
+          secret_key: "{{ aap_must_gather_s3_secret_key }}"
+          region: "{{ aap_must_gather_s3_region }}"
+        state: present
+      no_log: true
+      when: aap_must_gather_s3_upload_enabled | bool
+
+    - name: Build controlled Job Template credential list
+      ansible.builtin.set_fact:
+        aap_must_gather_job_template_credentials: >-
+          {{
+            (
+              [aap_must_gather_credential_name]
+              if aap_must_gather_kubeconfig_file | length > 0
+              else []
+            )
+            +
+            (
+              [aap_must_gather_s3_credential_name]
+              if aap_must_gather_s3_upload_enabled | bool
+              else []
+            )
+          }}
+
+    - name: Create controlled must-gather Job Template
+      awx.awx.job_template:
+        name: "{{ aap_must_gather_job_template_name }}"
+        description: >-
+          Controlled brokered OpenShift must-gather job. Dev users may execute
+          this template but must not administer it.
+        organization: "{{ aap_controller_organization }}"
+        job_type: run
+        inventory: "{{ aap_must_gather_inventory_name }}"
+        project: "{{ aap_must_gather_project_name }}"
+        playbook: playbooks/ocp_must_gather.yml
+        credentials: "{{ aap_must_gather_job_template_credentials }}"
+        execution_environment: >-
+          {{ aap_must_gather_execution_environment_name }}
+        ask_credential_on_launch: false
+        ask_execution_environment_on_launch: false
+        ask_inventory_on_launch: false
+        ask_variables_on_launch: false
+        ask_diff_mode_on_launch: false
+        ask_job_type_on_launch: false
+        ask_limit_on_launch: false
+        ask_scm_branch_on_launch: false
+        ask_tags_on_launch: false
+        ask_skip_tags_on_launch: false
+        ask_timeout_on_launch: false
+        ask_verbosity_on_launch: false
+        allow_simultaneous: false
+        timeout: "{{ aap_must_gather_job_timeout | int }}"
+        verbosity: 1
+        extra_vars:
+          ocp_must_gather_cluster_name: "{{ aap_must_gather_cluster_name }}"
+          ocp_must_gather_output_root: "{{ aap_must_gather_output_root }}"
+          ocp_must_gather_clean_config: "{{ aap_must_gather_clean_config }}"
+          ocp_must_gather_s3_upload_enabled: >-
+            {{ aap_must_gather_s3_upload_enabled | bool }}
+          ocp_must_gather_s3_endpoint_url: >-
+            {{ aap_must_gather_s3_endpoint_url }}
+          ocp_must_gather_s3_bucket: "{{ aap_must_gather_s3_bucket }}"
+          ocp_must_gather_s3_region: "{{ aap_must_gather_s3_region }}"
+          ocp_must_gather_s3_prefix: "{{ aap_must_gather_s3_prefix }}"
+          ocp_must_gather_s3_validate_certs: >-
+            {{ aap_must_gather_s3_validate_certs | bool }}
+          ocp_must_gather_command_timeout: >-
+            {{ aap_must_gather_command_timeout | int }}
+        survey_enabled: true
+        survey_spec:
+          name: OpenShift Must-Gather Survey
+          description: >-
+            Minimal metadata only. These fields cannot alter command behavior.
+          spec:
+            - question_name: Red Hat support case ID
+              question_description: >-
+                Letters, numbers, underscore, or hyphen. No spaces.
+              required: true
+              type: text
+              variable: support_case_id
+              min: 3
+              max: 64
+              default: ""
+            - question_name: Short reference label
+              question_description: >-
+                Optional short ticket or team label. No spaces.
+              required: false
+              type: text
+              variable: reference_label
+              min: 0
+              max: 32
+              default: ""
+            - question_name: Run must-gather-clean
+              question_description: >-
+                Optional cleaning with the platform-owned config. Select false
+                for the standard must-gather smoke path.
+              required: true
+              type: multiplechoice
+              variable: ocp_must_gather_clean_enabled
+              choices:
+                - "false"
+                - "true"
+              default: "false"
+        state: present
+
+    - name: Create pilot dev team when requested
+      awx.awx.team:
+        name: "{{ aap_must_gather_pilot_team_name }}"
+        organization: "{{ aap_controller_organization }}"
+        description: >-
+          Pilot team with execute-only access to the OpenShift must-gather MVP
+          Job Template.
+        state: present
+      when: aap_must_gather_pilot_team_name | length > 0
+
+    - name: Grant execute-only access to pilot dev team
+      awx.awx.role:
+        teams:
+          - "{{ aap_must_gather_pilot_team_name }}"
+        job_templates:
+          - "{{ aap_must_gather_job_template_name }}"
+        lookup_organization: "{{ aap_controller_organization }}"
+        role: execute
+        state: present
+      when: aap_must_gather_pilot_team_name | length > 0

@@ -1,0 +1,26 @@
+title: "OCP Must-Gather through AAP"
+description: >-
+  Controlled brokered OpenShift must-gather collection through AWX or Ansible
+  Automation Platform without granting development users direct cluster-admin
+  access.
+url: "https://turbra.github.io"
+baseurl: "/ocp-must-gather-aap"
+repo_url: "https://github.com/turbra/ocp-must-gather-aap"
+theme: jekyll-theme-primer
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+markdown: kramdown
+kramdown:
+  input: GFM
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+
+defaults:
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: default
