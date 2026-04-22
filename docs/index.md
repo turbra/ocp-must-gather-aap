@@ -12,32 +12,33 @@ description: >-
 </div>
 
 Controlled OpenShift must-gather collection through AWX or Ansible Automation
-Platform. Start with the deployment guide when creating the job in an existing
-controller, then use the validation checklist before expanding beyond the pilot
-team.
+Platform. Start with the deployment guide when creating the workflow in an
+existing controller. Use the validation and architecture references after the
+deployment path is clear.
 
-## Deploy
+## Deploy First
 
-- <a href="{{ '/user-deployment-guide.html' | relative_url }}"><kbd>USER DEPLOYMENT GUIDE</kbd></a>
-  for creating the Project, Inventory, Credential, Job Template, Survey, and
-  RBAC in an existing AAP or AWX environment
-- <a href="{{ '/aap-setup-runbook.html' | relative_url }}"><kbd>AAP SETUP RUNBOOK</kbd></a>
-  for the platform-admin setup sequence, including local AWX development notes
+- <a href="{{ '/deployment-guide.html' | relative_url }}"><kbd>DEPLOYMENT GUIDE</kbd></a>
+  for creating the workflow in an existing AAP or AWX environment
+- <a href="{{ '/aap-setup-runbook.html' | relative_url }}"><kbd>SETUP RUNBOOK</kbd></a>
+  for the detailed platform-admin setup sequence
 - <a href="{{ '/aap-admin-implementation-checklist.html' | relative_url }}"><kbd>ADMIN CHECKLIST</kbd></a>
-  for first pilot rollout readiness
+  for rollout readiness tracking
 
-## Validate
+## Validate Internally
 
-- <a href="{{ '/pilot-validation-checklist.html' | relative_url }}"><kbd>PILOT VALIDATION CHECKLIST</kbd></a>
-  for RBAC, survey input, credential injection, artifact handling, and audit
-  trail checks
-- <a href="{{ '/aap-must-gather-mvp.html' | relative_url }}"><kbd>DESIGN AND SECURITY NOTES</kbd></a>
+- <a href="{{ '/internal-validation-checklist.html' | relative_url }}"><kbd>INTERNAL PLATFORM VALIDATION</kbd></a>
+  for platform-owned pilot checks after deployment
+
+## Understand The Model
+
+- <a href="{{ '/architecture-and-security.html' | relative_url }}"><kbd>ARCHITECTURE AND SECURITY</kbd></a>
   for the brokered-execution model, credential boundary, artifact flow, and
   known limitations
 
 ## Key Rules
 
-- AAP/AWX brokers the privileged must-gather operation.
+- The controller brokers the privileged must-gather operation.
 - Dev users receive execute access to one Job Template only.
 - Dev users must not receive credential access.
 - The OpenShift identity used by the job comes from the attached kubeconfig
@@ -52,7 +53,7 @@ team.
 - must-gather-clean is optional. The survey may only turn it on or off, while
   the config path and flags stay platform-owned.
 - `report.yaml` from must-gather-clean is not a shareable artifact.
-- AWX/AAP remains the control and audit plane. S3-compatible object storage is
+- The controller remains the control and audit plane. S3-compatible object storage is
   the preferred download handoff plane.
 - Object storage settings are platform-owned extra vars and credentials, not
   survey input.

@@ -4,13 +4,13 @@ title: AAP Setup Runbook
 
 # AAP Setup Runbook
 
-This runbook turns the existing MVP scaffold into one runnable AAP Job
+This runbook turns the existing MVP scaffold into one runnable AAP or AWX Job
 Template for one OpenShift cluster. It does not add multi-cluster routing,
 approvals, Vault, or custom download workflows.
 
 ## 1. Confirm Repo Content
 
-The AAP Project must expose these paths after sync:
+The controller Project must expose these paths after sync:
 
 ```text
 playbooks/ocp_must_gather.yml
@@ -42,7 +42,7 @@ Use these locations for real deployment values:
 - Local vars file: operator-specific values used by
   `scripts/apply-aap-controller-mvp.sh`. Keep this file outside source
   control.
-- AWX/AAP credentials: kubeconfig content, object-storage access key, and
+- Controller credentials: kubeconfig content, object-storage access key, and
   object-storage secret key.
 - Job Template extra vars for platform-owned non-secret settings such as
   endpoint, bucket, prefix, TLS validation, cluster name, and output root.
@@ -55,15 +55,15 @@ cp aap/controller-vars.example.yml aap/controller-vars.local.yml
 vi aap/controller-vars.local.yml
 ```
 
-AWX/AAP controller-side state may still contain real environment-specific
-values even when the Git repo is clean.
+Controller-side state may still contain real environment-specific values even
+when the Git repo is clean.
 
 Before sharing controller exports, screenshots, copied YAML, or API output,
 verify:
 
 - Job Template extra vars contain only non-secret platform-owned settings.
-- Kubeconfig content exists only in the AWX/AAP kubeconfig credential.
-- Object-storage access key and secret key exist only in the AWX/AAP
+- Kubeconfig content exists only in the controller kubeconfig credential.
+- Object-storage access key and secret key exist only in the controller
   object-storage credential.
 - Survey fields are limited to `support_case_id`, `reference_label`, and
   `ocp_must_gather_clean_enabled`.
@@ -90,7 +90,7 @@ must-gather job is effectively running as that user.
 > dedicated platform-owned service account or equivalent non-human identity.
 
 Build a kubeconfig for that service account and validate it from an environment
-equivalent to the AAP execution runtime:
+equivalent to the controller execution runtime:
 
 ```bash
 export KUBECONFIG=/path/to/mustgather-sa.kubeconfig
@@ -99,7 +99,7 @@ oc auth can-i '*' '*' --all-namespaces
 oc adm must-gather --help
 ```
 
-Do not commit this kubeconfig. It belongs only in the AAP credential.
+Do not commit this kubeconfig. It belongs only in the controller credential.
 Treat it as a high-value credential. It may need privileges equivalent to
 cluster-admin, depending on the cluster and must-gather requirements.
 
@@ -122,7 +122,7 @@ The selected EE must contain:
 pinned OpenShift `oc` client from
 `https://mirror.openshift.com/pub/openshift-v4/clients/ocp/` and verifies the
 archive checksum before installing it. Build and publish the EE using the
-platform team's normal registry process. Then register the image in AAP as an
+platform team's normal registry process. Then register the image in the controller as an
 Execution Environment.
 
 The pinned `oc` version is controlled by these build args in `ee/Containerfile`
@@ -230,7 +230,7 @@ Then confirm the same archive exists in the configured object storage bucket.
 
 ## 5. Create The Custom Credential Type
 
-In AAP, create a custom credential type:
+In the controller, create a custom credential type:
 
 - Name: `OpenShift Must-Gather Kubeconfig`
 - Kind: `Cloud`
@@ -282,14 +282,14 @@ Do not grant dev users direct access to either credential.
 
 ## 7. Create The Project
 
-Create or update an AAP Project:
+Create or update a controller Project:
 
 - Name: `ocp-mustgather-aap`
 - Source Control URL: this repo
 - Branch: rollout branch or `main`, according to platform process
 - Update Revision on Launch: enabled for pilot
 
-Sync the Project and confirm AAP lists:
+Sync the Project and confirm the controller lists:
 
 ```text
 playbooks/ocp_must_gather.yml
@@ -541,7 +541,7 @@ Log in as a pilot dev user and confirm:
 
 Launch once and confirm the artifact is produced and retrievable.
 
-For the admin and dev test runs, confirm AAP records:
+For the admin and dev test runs, confirm the controller records:
 
 - Individual user who launched the job.
 - Launch timestamp.

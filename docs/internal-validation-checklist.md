@@ -1,21 +1,24 @@
 ---
-title: Pilot Validation Checklist
+title: Internal Platform Validation Checklist
 ---
 
-# AAP Must-Gather MVP Pilot Validation Checklist
+# Internal Platform Validation Checklist
 
 ## Objective
 
-Validate that the MVP works in AAP as a controlled brokered-execution pattern.
-The pilot must prove that a dev user can launch must-gather without direct
-cluster-admin access, while the platform team keeps control over credentials,
-logic, artifact handling, and auditability.
+Use this checklist after deployment to validate the brokered-execution control
+model. It is an internal platform validation document, not the primary
+deployment guide.
+
+The validation proves that a development user can launch must-gather without
+direct cluster-admin access, while the platform team keeps control over
+credentials, logic, artifact handling, and auditability.
 
 ## 1. Pre-pilot Prerequisites
 
 Confirm these are ready before testing:
 
-- AAP Project is created and synced to the correct repo revision.
+- AAP or AWX Project is created and synced to the correct repo revision.
 - Execution Environment selected for the job includes `oc`.
 - Execution Environment selected for the job includes `tar`.
 - Execution Environment selected for the job includes `must-gather-clean`.
@@ -44,7 +47,7 @@ Confirm these are ready before testing:
 - Platform-owned must-gather-clean config is present in the synced Project.
 - `ocp_must_gather_clean_enabled` is a constrained `false` or `true`
       choice with default `false`.
-- Pilot dev user or group exists in AAP.
+- Pilot dev user or group exists in the controller.
 - Pilot dev user or group has execute access only.
 - Artifact output path is available and writable.
 - S3 endpoint and bucket are reachable from the EE runtime when upload is
@@ -55,9 +58,9 @@ Pass criteria:
 
 - All prerequisites are confirmed before the first live run.
 
-## 2. AAP Object Validation
+## 2. Controller Object Validation
 
-Validate the AAP control model:
+Validate the controller control model:
 
 - Dev user can see the Job Template.
 - Dev user can launch the Job Template.
@@ -66,7 +69,7 @@ Validate the AAP control model:
 - Dev user cannot edit the Inventory.
 - Dev user cannot edit the Credential.
 - Dev user cannot see kubeconfig secret content.
-- Platform admin can manage all required AAP objects.
+- Platform admin can manage all required controller objects.
 
 Pass criteria:
 
@@ -98,9 +101,9 @@ Pass criteria:
 
 ## 4. Credential Injection Validation
 
-Validate that AAP injects the kubeconfig as expected:
+Validate that the controller injects the kubeconfig as expected:
 
-- Job starts with the AAP credential attached.
+- Job starts with the controller credential attached.
 - Role preflight confirms `KUBECONFIG` presence.
 - `oc whoami` shows the expected service account or non-human identity.
 - If `oc whoami` shows a personal user, the run is treated as lab-only.
@@ -192,7 +195,7 @@ Pass criteria:
 
 Validate accountability.
 
-Check AAP job history for:
+Check controller job history for:
 
 - Who launched the job.
 - When it was launched.
@@ -267,7 +270,7 @@ The MVP pilot is successful when all of these are true:
 - Must-gather runs successfully against the pilot cluster.
 - Artifact is produced in a known location.
 - Artifact can be retrieved reliably.
-- AAP records who launched the job and when.
+- Controller records who launched the job and when.
 - Basic failure cases behave safely.
 - Platform team is comfortable supporting the MVP operationally.
 
@@ -278,14 +281,14 @@ After the pilot, document:
 - What worked.
 - What confused users.
 - Where artifact retrieval was awkward.
-- Whether AAP RBAC behaved as intended.
+- Whether controller RBAC behaved as intended.
 - Whether logs were sufficient for audit.
 - Any EE dependency issues.
 - What must change before broader rollout.
 
-## Recommended Immediate Next Actions
+## Recommended Internal Validation Sequence
 
-1. Stand up the Job Template in AAP exactly as documented.
+1. Deploy the Job Template with the [Deployment Guide](deployment-guide.md).
 2. Run one admin-led validation job first.
 3. Run one pilot dev-user job with execute-only permissions.
 4. Review artifact retrieval and audit trail before expanding.

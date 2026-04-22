@@ -39,18 +39,21 @@ commands, flags, paths, bucket names, credentials, or cleanup configuration.
 The playbook validates inputs, runs a fixed `oc adm must-gather` workflow,
 optionally sanitizes the output with must-gather-clean, creates the final
 archive, uploads it to object storage when enabled, and records the launch in
-AWX/AAP job history.
+controller job history.
 
 ## Quick Start
 
-Start with the [User Deployment Guide](docs/user-deployment-guide.md) when you
+Start with the [Deployment Guide](docs/deployment-guide.md) when you
 are creating the workflow in an existing AWX or AAP controller.
 
 For a platform-admin rollout, use:
 
 - [AAP Setup Runbook](docs/aap-setup-runbook.md)
 - [Admin Implementation Checklist](docs/aap-admin-implementation-checklist.md)
-- [Pilot Validation Checklist](docs/pilot-validation-checklist.md)
+
+After deployment, use the
+[Internal Platform Validation Checklist](docs/internal-validation-checklist.md) to
+validate RBAC, survey inputs, artifacts, audit trail, and failure behavior.
 
 The Execution Environment downloads a pinned OpenShift `oc` client during the
 image build and verifies it with a pinned SHA-256 checksum. Keep the client on
@@ -79,13 +82,13 @@ They launch a predefined job and provide constrained metadata only.
 
 - [Documentation site](https://turbra.github.io/ocp-must-gather-aap/):
   deployment, operations, and validation entry point.
-- [Design and security notes](docs/aap-must-gather-mvp.md): brokered execution
+- [Architecture and security reference](docs/architecture-and-security.md): brokered execution
   model, credential boundary, artifact flow, and limitations.
-- [User Deployment Guide](docs/user-deployment-guide.md): create the workflow
+- [Deployment Guide](docs/deployment-guide.md): create the workflow
   in an existing AWX or AAP environment.
 - [AAP Setup Runbook](docs/aap-setup-runbook.md): step-by-step platform setup.
-- [Pilot Validation Checklist](docs/pilot-validation-checklist.md): validate
-  RBAC, survey inputs, artifacts, audit trail, and failure behavior.
+- [Internal Platform Validation Checklist](docs/internal-validation-checklist.md):
+  platform-owned validation after deployment.
 
 ## Local Files And Secrets
 
@@ -93,12 +96,12 @@ Do not commit kubeconfigs, controller vars, object-storage credentials, tokens,
 `.env` files, private keys, certificates, generated must-gather archives, or
 extracted must-gather output.
 
-Real deployment values belong in AWX/AAP credentials, Job Template extra vars,
+Real deployment values belong in controller credentials, Job Template extra vars,
 or an untracked local vars file. Copy `aap/controller-vars.example.yml` to an
 untracked path such as `aap/controller-vars.local.yml` or a secure directory
 outside the repo, then edit the copy.
 
-AWX/AAP controller-side objects may contain real environment-specific values
+Controller-side objects may contain real environment-specific values
 even when the Git tree is clean. Review Job Template extra vars, credentials,
 exports, API output, and screenshots before sharing.
 
