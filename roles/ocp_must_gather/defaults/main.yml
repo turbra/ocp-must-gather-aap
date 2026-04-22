@@ -1,0 +1,32 @@
+---
+# Platform-owned settings. Do not expose these as survey fields for the MVP.
+ocp_must_gather_cluster_name: clustera
+ocp_must_gather_output_root: /runner/artifacts/ocp-must-gather
+ocp_must_gather_work_root: /tmp/ocp-must-gather-runs
+ocp_must_gather_command_timeout: 3600
+ocp_must_gather_min_archive_bytes: 1024
+ocp_must_gather_cleanup_work_dir: true
+
+# Platform-owned sanitization settings. The clean config stays platform-owned.
+# The optional clean toggle may be exposed as a constrained AAP survey choice.
+ocp_must_gather_clean_enabled: false
+ocp_must_gather_clean_config: >-
+  {{ playbook_dir }}/../config/must-gather-clean/openshift_default.yaml
+ocp_must_gather_clean_report_filename: report.yaml
+
+# Platform-owned S3-compatible artifact upload settings. Keep these out of
+# the survey. Access keys should normally come from an AAP credential injector.
+ocp_must_gather_s3_upload_enabled: false
+ocp_must_gather_s3_endpoint_url: ""
+ocp_must_gather_s3_bucket: ""
+ocp_must_gather_s3_region: >-
+  {{ lookup('ansible.builtin.env', 'AWS_REGION') | default('', true) }}
+ocp_must_gather_s3_access_key: >-
+  {{ lookup('ansible.builtin.env', 'AWS_ACCESS_KEY_ID') | default('', true) }}
+ocp_must_gather_s3_secret_key: >-
+  {{
+    lookup('ansible.builtin.env', 'AWS_SECRET_ACCESS_KEY')
+    | default('', true)
+  }}
+ocp_must_gather_s3_prefix: must-gather
+ocp_must_gather_s3_validate_certs: true

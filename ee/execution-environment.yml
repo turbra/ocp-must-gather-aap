@@ -1,0 +1,51 @@
+---
+version: 3
+
+images:
+  base_image:
+    name: quay.io/ansible/awx-ee:latest
+
+dependencies:
+  galaxy: requirements.yml
+  python: requirements.txt
+
+additional_build_steps:
+  append_final:
+    - ARG OPENSHIFT_CLIENT_VERSION=4.20.16
+    - >-
+      ARG
+      OPENSHIFT_CLIENT_LINUX_AMD64_SHA256=e7eca1f6d4c9a3a4f59d24bfff6197c8780ed22db508fef499c2fdc37e912406
+    - >-
+      ARG
+      OPENSHIFT_CLIENT_LINUX_ARM64_SHA256=1d7b59e68b9c59d0be893023d8ef70048da3932b695a0654c2e741beee3f0994
+    - ARG TARGETARCH=amd64
+    - >-
+      RUN case "${TARGETARCH}" in
+      amd64)
+      oc_archive="openshift-client-linux-${OPENSHIFT_CLIENT_VERSION}.tar.gz";
+      oc_sha256="${OPENSHIFT_CLIENT_LINUX_AMD64_SHA256}" ;;
+      arm64)
+      oc_archive="openshift-client-linux-arm64-${OPENSHIFT_CLIENT_VERSION}.tar.gz";
+      oc_sha256="${OPENSHIFT_CLIENT_LINUX_ARM64_SHA256}" ;;
+      *) echo "Unsupported OpenShift client arch: ${TARGETARCH}" >&2; exit 1 ;;
+      esac
+      && curl -fsSL
+      "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OPENSHIFT_CLIENT_VERSION}/${oc_archive}"
+      -o /tmp/openshift-client.tar.gz
+      && echo "${oc_sha256}  /tmp/openshift-client.tar.gz" | sha256sum -c -
+      && tar -xzf /tmp/openshift-client.tar.gz -C /usr/local/bin oc
+      && chmod 0755 /usr/local/bin/oc
+      && rm -f /tmp/openshift-client.tar.gz
+    - >-
+      RUN curl -fsSL
+      https://github.com/openshift/must-gather-clean/releases/download/v0.0.4/must-gather-clean-linux-amd64.tar.gz
+      -o /tmp/must-gather-clean.tar.gz
+      && tar -xzf /tmp/must-gather-clean.tar.gz -C /usr/local/bin
+      must-gather-clean
+      && chmod 0755 /usr/local/bin/must-gather-clean
+      && rm -f /tmp/must-gather-clean.tar.gz
+    - RUN oc version --client=true
+    - RUN tar --version
+    - RUN must-gather-clean version
+    - RUN python3 -c "import boto3, botocore"
+    - RUN ansible-doc amazon.aws.s3_object >/dev/null

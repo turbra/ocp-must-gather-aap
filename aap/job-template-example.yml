@@ -1,0 +1,63 @@
+---
+name: OpenShift Must-Gather - ClusterA
+description: >-
+  Controlled brokered OpenShift must-gather job. Dev users may execute this
+  template but must not administer it.
+job_type: run
+inventory: clustera-localhost
+project: ocp-mustgather-aap
+playbook: playbooks/ocp_must_gather.yml
+credentials:
+  - mustgather-clustera-sa
+  - mustgather-artifact-s3
+execution_environment: ocp-mustgather-ee
+ask_variables_on_launch: false
+ask_credential_on_launch: false
+ask_inventory_on_launch: false
+allow_simultaneous: false
+timeout: 7200
+verbosity: 1
+extra_vars:
+  ocp_must_gather_cluster_name: clustera
+  ocp_must_gather_output_root: /runner/artifacts/ocp-must-gather
+  ocp_must_gather_clean_config: >-
+    /runner/project/config/must-gather-clean/openshift_default.yaml
+  ocp_must_gather_s3_upload_enabled: false
+  ocp_must_gather_s3_endpoint_url: https://s3.example.invalid
+  ocp_must_gather_s3_bucket: must-gather-artifacts
+  ocp_must_gather_s3_region: us-east-1
+  ocp_must_gather_s3_prefix: must-gather
+  ocp_must_gather_s3_validate_certs: true
+survey_enabled: true
+survey_spec:
+  name: OpenShift Must-Gather Survey
+  description: >-
+    Minimal metadata only. These fields cannot alter command behavior.
+  spec:
+    - question_name: Red Hat support case ID
+      question_description: Letters, numbers, underscore, or hyphen. No spaces.
+      required: true
+      type: text
+      variable: support_case_id
+      min: 3
+      max: 64
+      default: ""
+    - question_name: Short reference label
+      question_description: Optional short ticket or team label. No spaces.
+      required: false
+      type: text
+      variable: reference_label
+      min: 0
+      max: 32
+      default: ""
+    - question_name: Run must-gather-clean
+      question_description: >-
+        Optional cleaning with the platform-owned config. Select false for the
+        standard must-gather smoke path.
+      required: true
+      type: multiplechoice
+      variable: ocp_must_gather_clean_enabled
+      choices:
+        - "false"
+        - "true"
+      default: "false"

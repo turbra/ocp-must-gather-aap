@@ -1,0 +1,45 @@
+---
+# Platform-owned must-gather-clean config for the AAP must-gather MVP.
+# Based on:
+# https://raw.githubusercontent.com/openshift/must-gather-clean/main/examples/openshift_default.yaml
+#
+# Keep this file controlled by the platform team. Do not expose it through an
+# AAP survey. Add organization-specific domain names here only after platform
+# review.
+config:
+  obfuscate:
+    - type: IP
+      replacementType: Consistent
+      target: All
+    - type: MAC
+      replacementType: Consistent
+      target: All
+    - type: Domain
+      replacementType: Consistent
+      target: All
+      domainNames:
+        - "rhcloud.com"
+        - "dev.rhcloud.com"
+    - type: AzureResources
+      replacementType: Consistent
+      target: All
+  omit:
+    - type: Kubernetes
+      kubernetesResource:
+        kind: "Secret"
+    - type: Kubernetes
+      kubernetesResource:
+        kind: "ConfigMap"
+    - type: Kubernetes
+      kubernetesResource:
+        kind: CertificateSigningRequest
+        apiVersion: certificates.k8s.io/v1
+    - type: Kubernetes
+      kubernetesResource:
+        kind: CertificateSigningRequestList
+        apiVersion: certificates.k8s.io/v1
+    - type: Kubernetes
+      kubernetesResource:
+        kind: MachineConfig
+        apiVersion: machineconfiguration.openshift.io/v1
+  randSeed: 1

@@ -1,0 +1,8 @@
+---
+- name: Controlled OpenShift must-gather for AAP
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  roles:
+    - role: ocp_must_gather

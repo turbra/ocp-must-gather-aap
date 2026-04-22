@@ -1,0 +1,55 @@
+---
+# Copy this file to a local, uncommitted vars file and update values before
+# running scripts/apply-aap-controller-mvp.sh.
+
+aap_controller_organization: Default
+
+# Project source for this repo as seen by AAP.
+# Use git for a normal AAP Project. Use manual only for local AWX development
+# when the project has already been copied under /var/lib/awx/projects.
+aap_must_gather_project_scm_type: git
+aap_must_gather_project_scm_url: >-
+  https://git.example.invalid/platform/ocp-mustgather-aap.git
+aap_must_gather_project_scm_branch: main
+aap_must_gather_project_local_path: ocp-mustgather-aap
+
+# MVP object names.
+aap_must_gather_project_name: ocp-mustgather-aap
+aap_must_gather_inventory_name: clustera-localhost
+aap_must_gather_credential_type_name: OpenShift Must-Gather Kubeconfig
+aap_must_gather_credential_name: mustgather-clustera-sa
+aap_must_gather_s3_credential_type_name: S3 Object Store Access
+aap_must_gather_s3_credential_name: mustgather-artifact-s3
+aap_must_gather_execution_environment_name: ocp-mustgather-ee
+aap_must_gather_execution_environment_image: >-
+  registry.example.invalid/aap/ocp-mustgather-ee:latest
+aap_must_gather_job_template_name: OpenShift Must-Gather - ClusterA
+
+# Platform-owned Job Template extra vars. Do not expose these in the survey.
+aap_must_gather_cluster_name: clustera
+aap_must_gather_output_root: /runner/artifacts/ocp-must-gather
+aap_must_gather_clean_config: >-
+  /runner/project/config/must-gather-clean/openshift_default.yaml
+aap_must_gather_s3_upload_enabled: false
+aap_must_gather_s3_endpoint_url: https://s3.example.invalid
+aap_must_gather_s3_bucket: must-gather-artifacts
+aap_must_gather_s3_region: us-east-1
+aap_must_gather_s3_prefix: must-gather
+aap_must_gather_s3_validate_certs: true
+aap_must_gather_job_timeout: 7200
+aap_must_gather_command_timeout: 3600
+
+# Local path on the operator workstation running the apply playbook. This file
+# is read and sent to AAP as a secret credential input. Do not commit it.
+# Leave empty only when creating the non-runnable controller skeleton before
+# the platform-owned OpenShift kubeconfig is available.
+aap_must_gather_kubeconfig_file: ""
+
+# Optional S3-compatible object storage credential inputs. These values are
+# read into an AAP credential and must only be set in the local uncommitted
+# vars file. Leave empty when upload is disabled.
+aap_must_gather_s3_access_key: ""
+aap_must_gather_s3_secret_key: ""
+
+# Optional pilot team. Leave empty to skip team creation and RBAC assignment.
+aap_must_gather_pilot_team_name: dev-mustgather-pilot
