@@ -82,13 +82,14 @@ They launch a predefined job and provide constrained metadata only.
 
 - [Documentation site](https://turbra.github.io/ocp-must-gather-aap/):
   deployment, operations, and validation entry point.
+- [Deployment Guide](docs/deployment-guide.md): primary setup path for creating
+  the workflow in an existing AWX or AAP environment.
+- [AAP Setup Runbook](docs/aap-setup-runbook.md): deep admin reference for
+  controller object detail, `oc` version pinning, and local AWX development.
+- [Internal Platform Validation Checklist](docs/internal-validation-checklist.md):
+  internal platform team use only; validate RBAC, survey, artifacts, and audit after deployment.
 - [Architecture and security reference](docs/architecture-and-security.md): brokered execution
   model, credential boundary, artifact flow, and limitations.
-- [Deployment Guide](docs/deployment-guide.md): create the workflow
-  in an existing AWX or AAP environment.
-- [AAP Setup Runbook](docs/aap-setup-runbook.md): step-by-step platform setup.
-- [Internal Platform Validation Checklist](docs/internal-validation-checklist.md):
-  platform-owned validation after deployment.
 
 ## Local Files And Secrets
 

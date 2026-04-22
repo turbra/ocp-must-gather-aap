@@ -75,23 +75,7 @@ Register the image in AWX/AAP:
 - Image: `registry.example.com/aap/ocp-mustgather-ee:latest`
 - Pull policy: `If newer` for registry-backed images
 
-Before attaching the EE to the Job Template, confirm the required tools are
-available. Use your image name:
-
-```bash
-IMAGE=registry.example.com/aap/ocp-mustgather-ee:latest
-
-podman run --rm "$IMAGE" oc version --client=true
-podman run --rm "$IMAGE" tar --version
-podman run --rm "$IMAGE" must-gather-clean version
-podman run --rm "$IMAGE" python3 -c "import boto3, botocore"
-podman run --rm "$IMAGE" ansible-doc amazon.aws.s3_object
-```
-
-`must-gather-clean` is community-supported and is only called when the survey
-toggle is enabled. The standard path still requires `oc`, `tar`, the
-`amazon.aws` collection, `boto3`, and `botocore` when object storage upload is
-enabled.
+Verify the required tools are available before attaching the EE to the Job Template. See the [Setup Runbook](aap-setup-runbook.md) section 3 for verification commands. `must-gather-clean` is community-supported and is only called when the survey toggle is enabled.
 
 ## 2. Use The Preferred Deployment Path
 
@@ -122,7 +106,8 @@ collection. If it completes successfully, continue with
 ## 3. Manual Fallback
 
 Use this section only if you are creating the controller objects by hand or
-verifying a scripted deployment.
+verifying a scripted deployment. For detailed field values, injector behavior,
+and object reference, see the [Setup Runbook](aap-setup-runbook.md).
 
 ### Project
 
@@ -183,18 +168,6 @@ Create the platform-owned OpenShift credential:
 - Credential Type: `OpenShift Must-Gather Kubeconfig`
 - Kubeconfig: dedicated service account kubeconfig for must-gather
 
-Verify the kubeconfig before attaching it:
-
-```bash
-export KUBECONFIG=/secure/path/mustgather-sa.kubeconfig
-oc whoami
-oc auth can-i '*' '*' --all-namespaces
-oc adm must-gather --help
-```
-
-`oc whoami` should show the dedicated service account or equivalent non-human
-identity. If it shows a personal user, treat the credential as lab-only.
-
 Create the platform-owned object storage credential when upload is enabled:
 
 - Name: `mustgather-artifact-s3`
@@ -207,22 +180,8 @@ Do not grant development users direct access to either credential.
 
 ### Artifact Storage
 
-Use platform-owned Job Template extra vars for object storage. Do not expose
-these values in the survey.
-
-```yaml
-ocp_must_gather_s3_upload_enabled: true
-ocp_must_gather_s3_endpoint_url: https://s3.example.invalid
-ocp_must_gather_s3_bucket: must-gather-artifacts
-ocp_must_gather_s3_region: us-east-1
-ocp_must_gather_s3_prefix: must-gather
-ocp_must_gather_s3_validate_certs: true
-```
-
-Use `ocp_must_gather_s3_validate_certs: false` only for temporary lab endpoints
-with self-signed TLS. Prefer a trusted endpoint certificate for real use.
-
-The final object key is controlled by the playbook:
+Object storage settings are platform-owned extra vars on the Job Template. Do not expose
+these values in the survey. The final object key pattern is:
 
 ```text
 <prefix>/<cluster>/<archive-name>
