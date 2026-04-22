@@ -4,9 +4,7 @@ title: AAP Setup Runbook
 
 # AAP Setup Runbook
 
-This runbook turns the existing MVP scaffold into one runnable AAP or AWX Job
-Template for one OpenShift cluster. It does not add multi-cluster routing,
-approvals, Vault, or custom download workflows.
+This runbook is a deep admin reference for controller objects in the must-gather broker. Use the [Deployment Guide](deployment-guide.md) as the primary setup path. Refer to this runbook for detailed field values, injector behavior, local AWX development, and `oc` client version pinning. It does not cover multi-cluster routing, approvals, Vault, or custom download workflows.
 
 ## 1. Confirm Repo Content
 
@@ -361,25 +359,7 @@ The standalone final survey definition is:
 aap/survey-spec.yml
 ```
 
-> **Tip**
->
-> Creating controller objects from the CLI is the preferred method. The manual
-> steps in this runbook are a fallback for learning or troubleshooting.
-
-To create the controller objects from the CLI instead of clicking through the
-UI, use the apply playbook:
-
-```bash
-cp aap/controller-vars.example.yml /secure/path/controller-vars.yml
-vi /secure/path/controller-vars.yml
-export CONTROLLER_HOST=https://aap-controller.example.com
-export CONTROLLER_OAUTH_TOKEN=<token>
-scripts/apply-aap-controller-mvp.sh /secure/path/controller-vars.yml
-```
-
-The local vars file must point at the service account kubeconfig with
-`aap_must_gather_kubeconfig_file`. Do not place that kubeconfig or the edited
-vars file in this repo.
+Use the [Deployment Guide](deployment-guide.md) section 2 for the preferred CLI apply path.
 
 For local AWX development only, you can set
 `aap_must_gather_project_scm_type: manual` and
@@ -483,71 +463,6 @@ Pilot dev team must not receive:
 
 Validate by logging in as a pilot dev user before the live pilot.
 
-## 12. Run Initial Validation
+## 12. Post-deployment Checks
 
-Run the standard path first as a platform admin:
-
-```text
-support_case_id=TEST123
-reference_label=admin-smoke
-ocp_must_gather_clean_enabled=false
-```
-
-Confirm:
-
-- The job reaches Ansible.
-- `KUBECONFIG` preflight passes.
-- `oc whoami` prints the expected service account or non-human identity.
-- `oc whoami` does not print a personal user unless this is a documented
-  homelab or temporary lab run.
-- `oc auth can-i '*' '*' --all-namespaces` returns `yes`.
-- `oc adm must-gather` completes.
-- A `must-gather_raw_...tar.gz` archive is created under the selected output
-  root.
-- The archive uploads to object storage when upload is enabled.
-- Job output prints the final local artifact path.
-- Job output prints the object storage reference.
-- Job stats include `must_gather_artifact_path`.
-- Job stats include `must_gather_s3_uri` when upload is enabled.
-
-After the standard path succeeds, run a cleaning-enabled validation only if the
-EE includes `must-gather-clean` and the platform wants to validate sanitization:
-
-```text
-support_case_id=TEST124
-reference_label=clean-smoke
-ocp_must_gather_clean_enabled=true
-```
-
-Confirm:
-
-- `oc adm must-gather` completes before cleaning starts.
-- must-gather-clean runs with the platform-owned config.
-- A `must-gather_cleaned_...tar.gz` archive is created only when cleaned output
-  is valid.
-- `report.yaml` is not included in the archive.
-
-## 13. Validate Dev Access And Audit
-
-Log in as a pilot dev user and confirm:
-
-- User can launch `OpenShift Must-Gather - ClusterA`.
-- User can enter only `support_case_id`, optional `reference_label`, and the
-  constrained `ocp_must_gather_clean_enabled` choice.
-- User cannot change credentials, inventory, project, variables, command, output
-  path, or EE.
-- User cannot edit the Job Template.
-- User cannot view the kubeconfig credential.
-
-Launch once and confirm the artifact is produced and retrievable.
-
-For the admin and dev test runs, confirm the controller records:
-
-- Individual user who launched the job.
-- Launch timestamp.
-- Job Template name.
-- Survey inputs.
-- Job outcome.
-- Job output retention.
-
-Do not use shared generic users for the pilot validation.
+See [Deployment Guide: Post-deployment Checks](deployment-guide.md#post-deployment-checks).

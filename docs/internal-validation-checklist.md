@@ -4,61 +4,22 @@ title: Internal Platform Validation Checklist
 
 # Internal Platform Validation Checklist
 
-## Objective
-
-Use this checklist after deployment to validate the brokered-execution control
-model. It is an internal platform validation document, not the primary
-deployment guide.
+**Internal platform team use only.** Use this checklist after deploying with the [Deployment Guide](deployment-guide.md) to validate the brokered-execution control model.
 
 The validation proves that a development user can launch must-gather without
 direct cluster-admin access, while the platform team keeps control over
 credentials, logic, artifact handling, and auditability.
 
-## 1. Pre-pilot Prerequisites
+## Prerequisites
 
-Confirm these are ready before testing:
+Complete the [Deployment Guide](deployment-guide.md) before running these checks. Confirm:
 
-- AAP or AWX Project is created and synced to the correct repo revision.
-- Execution Environment selected for the job includes `oc`.
-- Execution Environment selected for the job includes `tar`.
-- Execution Environment selected for the job includes `must-gather-clean`.
-- Execution Environment selected for the job includes `amazon.aws`.
-- Execution Environment selected for the job includes `boto3` and
-      `botocore`.
-- Execution Environment has the shell and runtime dependencies required by
-      the playbook.
-- Localhost inventory exists.
-- Custom OpenShift kubeconfig credential type exists.
-- Platform-owned kubeconfig credential for the target cluster exists.
-- The kubeconfig credential represents a dedicated service account or
-      equivalent non-human identity for real pilots.
-- Any personal cluster-admin kubeconfig use is explicitly recorded as
-      homelab or temporary lab testing only.
-- Custom S3 object storage credential type exists.
-- Platform-owned S3 object storage credential exists when upload is
-      enabled.
-- Job Template uses the correct Project.
-- Job Template uses `playbooks/ocp_must_gather.yml`.
-- Job Template uses the localhost Inventory.
-- Job Template uses the correct platform-owned Credential.
-- Job Template uses the correct Execution Environment.
-- Survey is enabled with only `support_case_id`, optional
-      `reference_label`, and `ocp_must_gather_clean_enabled`.
-- Platform-owned must-gather-clean config is present in the synced Project.
-- `ocp_must_gather_clean_enabled` is a constrained `false` or `true`
-      choice with default `false`.
-- Pilot dev user or group exists in the controller.
-- Pilot dev user or group has execute access only.
-- Artifact output path is available and writable.
-- S3 endpoint and bucket are reachable from the EE runtime when upload is
-      enabled.
-- Target cluster is reachable from the EE runtime.
+- Controller has the Job Template, Project, Inventory, and credentials created.
+- Execution Environment includes `oc`, `tar`, `must-gather-clean`, `amazon.aws`, `boto3`, and `botocore`.
+- Pilot dev user or group exists in the controller with execute access only.
+- Target cluster and object storage endpoint are reachable from the EE runtime.
 
-Pass criteria:
-
-- All prerequisites are confirmed before the first live run.
-
-## 2. Controller Object Validation
+## 1. Controller Object Validation
 
 Validate the controller control model:
 
@@ -77,7 +38,7 @@ Pass criteria:
 - Modification is denied.
 - Privileged credential remains hidden from dev users.
 
-## 3. Survey And Input Validation
+## 2. Survey And Input Validation
 
 Validate that only safe inputs are exposed.
 
@@ -99,7 +60,7 @@ Pass criteria:
 - Valid inputs succeed.
 - Invalid inputs are rejected before must-gather execution begins.
 
-## 4. Credential Injection Validation
+## 3. Credential Injection Validation
 
 Validate that the controller injects the kubeconfig as expected:
 
@@ -121,7 +82,7 @@ Pass criteria:
 - Missing credential fails safely.
 - No secret leakage appears in job output.
 
-## 5. End-to-end Must-Gather Execution Test
+## 4. End-to-end Must-Gather Execution Test
 
 Run one real must-gather against the pilot cluster.
 
@@ -146,7 +107,7 @@ Pass criteria:
 - Successful archive is created with no platform-team intervention during
       launch.
 
-## 6. Artifact Validation
+## 5. Artifact Validation
 
 Validate that the output is usable in practice:
 
@@ -172,7 +133,7 @@ Pass criteria:
 
 - Artifact exists, is readable, and can be retrieved predictably.
 
-## 7. Dev-user Experience Validation
+## 6. Dev-user Experience Validation
 
 Have a pilot dev user perform the flow with minimal coaching.
 
@@ -191,7 +152,7 @@ Pass criteria:
 - Pilot dev user can launch and understand the workflow without platform
       intervention.
 
-## 8. Audit Trail Validation
+## 7. Audit Trail Validation
 
 Validate accountability.
 
@@ -213,7 +174,7 @@ Pass criteria:
 - Platform or security reviewer can determine who initiated the action and
       when.
 
-## 9. Failure-mode Validation
+## 8. Failure-mode Validation
 
 Test controlled failures:
 
@@ -238,7 +199,7 @@ Pass criteria:
 
 - Failures are safe, visible, and diagnosable.
 
-## 10. Security And Control Review
+## 9. Security And Control Review
 
 Confirm:
 
@@ -260,7 +221,7 @@ Pass criteria:
 
 - Control boundary is intact and explainable.
 
-## 11. Pilot Exit Criteria
+## 10. Pilot Exit Criteria
 
 The MVP pilot is successful when all of these are true:
 
@@ -274,7 +235,7 @@ The MVP pilot is successful when all of these are true:
 - Basic failure cases behave safely.
 - Platform team is comfortable supporting the MVP operationally.
 
-## 12. Capture Findings
+## 11. Capture Findings
 
 After the pilot, document:
 

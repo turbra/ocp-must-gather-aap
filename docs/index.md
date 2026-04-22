@@ -16,21 +16,26 @@ Platform. Start with the deployment guide when creating the workflow in an
 existing controller. Use the validation and architecture references after the
 deployment path is clear.
 
-## Deploy First
+## Start Here
 
 - <a href="{{ '/deployment-guide.html' | relative_url }}"><kbd>DEPLOYMENT GUIDE</kbd></a>
   for creating the workflow in an existing AAP or AWX environment
+
+## Admin Reference
+
 - <a href="{{ '/aap-setup-runbook.html' | relative_url }}"><kbd>SETUP RUNBOOK</kbd></a>
-  for the detailed platform-admin setup sequence
+  deep admin reference for controller object detail, `oc` version pinning, and local AWX development
 - <a href="{{ '/aap-admin-implementation-checklist.html' | relative_url }}"><kbd>ADMIN CHECKLIST</kbd></a>
   for rollout readiness tracking
 
-## Validate Internally
+## Internal Platform Validation
+
+Internal platform team use only.
 
 - <a href="{{ '/internal-validation-checklist.html' | relative_url }}"><kbd>INTERNAL PLATFORM VALIDATION</kbd></a>
   for platform-owned pilot checks after deployment
 
-## Understand The Model
+## Reference
 
 - <a href="{{ '/architecture-and-security.html' | relative_url }}"><kbd>ARCHITECTURE AND SECURITY</kbd></a>
   for the brokered-execution model, credential boundary, artifact flow, and
