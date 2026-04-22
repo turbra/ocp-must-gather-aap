@@ -32,7 +32,8 @@ cluster-admin user, the job is effectively running as that human user. That can
 be acceptable for homelab or short-lived lab validation, but it is not the
 recommended model for real use.
 
-> [!WARNING]
+> **Warning**
+>
 > Do not use a personal cluster-admin kubeconfig for real pilots. Use a
 > dedicated platform-owned service account or equivalent non-human identity.
 
@@ -109,7 +110,8 @@ as `must_gather_artifact_path`.
 When cleaning is enabled, the final shared artifact is the cleaned output. The
 raw must-gather directory is not the handoff artifact.
 
-> [!CAUTION]
+> **Caution**
+>
 > `must-gather-clean` writes `report.yaml`, which maps obfuscated values back
 > to originals. Do not share this file. The playbook excludes it from the
 > handoff archive.
@@ -120,7 +122,8 @@ archive while the job is running. Users retrieve the archive from object
 storage, not from AWX runner storage. Do not expose
 `ocp_must_gather_output_root` in the survey.
 
-> [!IMPORTANT]
+> **Important**
+>
 > AAP is the control and audit plane. It records who launched the job, when,
 > and with what inputs. Object storage is the artifact handoff plane. Dev users
 > retrieve the archive from object storage, not from AAP job artifacts.

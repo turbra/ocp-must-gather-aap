@@ -7,6 +7,10 @@ description: >-
 
 # Documentation
 
+<div class="sc-badge-row">
+  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-2C7A7B?style=flat-square" alt="License: Apache-2.0"></a>
+</div>
+
 Controlled OpenShift must-gather collection through AWX or Ansible Automation
 Platform. Start with the deployment guide when creating the job in an existing
 controller, then use the validation checklist before expanding beyond the pilot

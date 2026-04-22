@@ -1,3 +1,4 @@
+---
 title: "OCP Must-Gather through AAP"
 description: >-
   Controlled brokered OpenShift must-gather collection through AWX or Ansible
@@ -16,6 +17,7 @@ kramdown:
 exclude:
   - Gemfile
   - Gemfile.lock
+  - _scripts
   - vendor
 
 defaults:

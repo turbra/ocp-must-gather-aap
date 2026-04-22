@@ -1,46 +1,50 @@
-# OCP must-gather through AAP
+<p align="center">
+  <a href="https://turbra.github.io/ocp-must-gather-aap/"><strong>OCP must-gather through AAP</strong></a>
+</p>
 
-Run OpenShift must-gather from AWX or Ansible Automation Platform without
-handing cluster-admin access to development users. The project packages a fixed
-brokered-execution workflow: approved users launch one controlled Job Template,
-AAP runs the privileged collection using a platform-owned credential, and the
-resulting archive is handed off through S3-compatible object storage.
+<p align="center">
+  <strong>Broker privileged OpenShift must-gather through AWX/AAP without giving development users direct cluster-admin access.</strong>
+</p>
 
-## How it works
+<p align="center">
+  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-2C7A7B?style=flat-square" alt="License: Apache-2.0"></a>
+</p>
 
-- Platform administrators own the Project, Inventory, credentials, Execution
-  Environment, Job Template, survey, and RBAC.
-- Approved users receive execute access to the must-gather Job Template only.
-- The survey accepts only minimal metadata: `support_case_id`,
-  `reference_label`, and the optional must-gather-clean toggle.
-- The playbook validates inputs, runs a fixed `oc adm must-gather` workflow,
-  optionally runs must-gather-clean with a platform-owned config, packages the
-  final archive, and uploads it to object storage when enabled.
-- AWX or AAP records who launched the job, when it ran, and what outcome it
-  produced.
+<p align="center">
+  <a href="https://turbra.github.io/ocp-must-gather-aap/">Documentation</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#security-model">Security Model</a> •
+  <a href="#validation">Validation</a> •
+  <a href="#license">License</a>
+</p>
 
-## Security model
+---
 
-This is brokered privileged execution, not delegated OpenShift RBAC. The
-OpenShift credential attached to the Job Template still has the access required
-to run must-gather, which may be effectively cluster-admin.
+Run a fixed OpenShift must-gather workflow from AWX or Ansible Automation
+Platform. Approved users launch one controlled Job Template, AAP runs the
+privileged collection with a platform-owned credential, and the final archive is
+handed off through S3-compatible object storage.
 
-Development users do not receive the kubeconfig, S3 credential, project update
-rights, inventory admin rights, or permission to change the playbook internals.
-They launch a predefined job and provide constrained metadata only.
+## How It Works
 
-> [!WARNING]
-> Do not use a personal cluster-admin kubeconfig for real pilots or real
-> deployments. Use a dedicated platform-owned service account or equivalent
-> non-human identity. Every job runs as the OpenShift identity in the attached
-> kubeconfig.
+Platform administrators own the Project, Inventory, credentials, Execution
+Environment, Job Template, survey, and RBAC. Development users receive execute
+access to the Job Template only.
 
-## Quickstart
+The survey accepts only constrained metadata: `support_case_id`,
+`reference_label`, and the optional must-gather-clean toggle. Users cannot pass
+commands, flags, paths, bucket names, credentials, or cleanup configuration.
 
-Start with the deployment guide if you are creating the workflow in an existing
-AWX or AAP environment:
+The playbook validates inputs, runs a fixed `oc adm must-gather` workflow,
+optionally sanitizes the output with must-gather-clean, creates the final
+archive, uploads it to object storage when enabled, and records the launch in
+AWX/AAP job history.
 
-- [User Deployment Guide](docs/user-deployment-guide.md)
+## Quick Start
+
+Start with the [User Deployment Guide](docs/user-deployment-guide.md) when you
+are creating the workflow in an existing AWX or AAP controller.
 
 For a platform-admin rollout, use:
 
@@ -48,17 +52,33 @@ For a platform-admin rollout, use:
 - [Admin Implementation Checklist](docs/aap-admin-implementation-checklist.md)
 - [Pilot Validation Checklist](docs/pilot-validation-checklist.md)
 
-The Execution Environment downloads a pinned OpenShift `oc` client at build
-time from the OpenShift mirror and verifies it with a pinned SHA-256 checksum.
-Keep the client on the same OpenShift major.minor as the target cluster. Update
-the version and checksums together when the target cluster minor changes.
-Disconnected environments should mirror the same archive and checksum
-internally.
+The Execution Environment downloads a pinned OpenShift `oc` client during the
+image build and verifies it with a pinned SHA-256 checksum. Keep the client on
+the same OpenShift major.minor version as the target cluster. Update the version
+and checksums together when the target cluster minor changes. Disconnected
+environments should mirror the same archive and checksum internally.
+
+## Security Model
+
+This is brokered privileged execution, not delegated OpenShift RBAC. The
+OpenShift credential attached to the Job Template still has the access required
+to run must-gather, which may be effectively cluster-admin.
+
+Development users do not receive the kubeconfig, S3 credential, Project update
+rights, inventory admin rights, or permission to change the playbook internals.
+They launch a predefined job and provide constrained metadata only.
+
+> **Warning**
+>
+> Do not use a personal cluster-admin kubeconfig for real pilots or real
+> deployments. Use a dedicated platform-owned service account or equivalent
+> non-human identity. Every job runs as the OpenShift identity in the attached
+> kubeconfig.
 
 ## Documentation
 
-- [Documentation index](docs/index.md): deployment, operations, and validation
-  entry point.
+- [Documentation site](https://turbra.github.io/ocp-must-gather-aap/):
+  deployment, operations, and validation entry point.
 - [Design and security notes](docs/aap-must-gather-mvp.md): brokered execution
   model, credential boundary, artifact flow, and limitations.
 - [User Deployment Guide](docs/user-deployment-guide.md): create the workflow
@@ -67,7 +87,7 @@ internally.
 - [Pilot Validation Checklist](docs/pilot-validation-checklist.md): validate
   RBAC, survey inputs, artifacts, audit trail, and failure behavior.
 
-## Local files and secrets
+## Local Files And Secrets
 
 Do not commit kubeconfigs, controller vars, object-storage credentials, tokens,
 `.env` files, private keys, certificates, generated must-gather archives, or
@@ -100,3 +120,7 @@ ansible-playbook --syntax-check -i inventories/localhost.yml playbooks/ocp_must_
 Do not run the playbook directly without a valid `KUBECONFIG` for the
 platform-owned must-gather service account or equivalent privileged non-human
 identity.
+
+## License
+
+[Apache License 2.0](LICENSE)
