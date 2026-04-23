@@ -41,24 +41,3 @@ Internal platform team use only.
   for the brokered-execution model, credential boundary, artifact flow, and
   known limitations
 
-## Key Rules
-
-- The controller brokers the privileged must-gather operation.
-- Dev users receive execute access to one Job Template only.
-- Dev users must not receive credential access.
-- The OpenShift identity used by the job comes from the attached kubeconfig
-  credential.
-- Personal cluster-admin kubeconfigs are for homelab or temporary lab testing
-  only. Use a platform-owned service account or equivalent non-human identity
-  for real environments.
-- Survey inputs are limited to `support_case_id` and optional
-  `reference_label`, plus the constrained `ocp_must_gather_clean_enabled`
-  choice.
-- The must-gather command and flags are fixed by the playbook.
-- must-gather-clean is optional. The survey may only turn it on or off, while
-  the config path and flags stay platform-owned.
-- `report.yaml` from must-gather-clean is not a shareable artifact.
-- The controller remains the control and audit plane. S3-compatible object storage is
-  the preferred download handoff plane.
-- Object storage settings are platform-owned extra vars and credentials, not
-  survey input.

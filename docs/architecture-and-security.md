@@ -21,6 +21,27 @@ This is not delegated OpenShift RBAC. `oc adm must-gather` requires elevated
 cluster access. AAP is intentionally acting as the broker for a privileged
 operation.
 
+## System Boundary
+
+```mermaid
+graph LR
+    DEV[dev user]
+    subgraph ctrl[AWX / AAP controller]
+        JT[Job Template]
+        CRED([platform-owned kubeconfig])
+        EE[Execution Environment]
+    end
+    OCP[(OpenShift cluster)]
+    S3[(S3 object storage)]
+
+    DEV -- execute only --> JT
+    CRED -- injected, not visible to dev --> EE
+    JT -- triggers --> EE
+    EE -- oc adm must-gather --> OCP
+    EE -- upload archive --> S3
+    DEV -- retrieve archive --> S3
+```
+
 ## Execution Model
 
 The playbook runs on `localhost` inside the AAP execution environment. It
@@ -184,37 +205,6 @@ Dev pilot team must not receive:
 Validate by logging in as a pilot dev user and confirming the user can launch
 the template but cannot browse or edit the credential, project, inventory, or
 template internals.
-
-## Operator Runbook
-
-1. Create a dedicated OpenShift service account for must-gather.
-2. Bind the required elevated cluster role to that service account.
-3. Build a kubeconfig for that service account.
-4. Validate from the target execution environment:
-
-   ```bash
-   oc whoami
-   oc auth can-i '*' '*' --all-namespaces
-   oc adm must-gather --help
-   ```
-
-   `oc whoami` must show the service account or non-human identity intended
-   for this workflow. If it shows a personal user, treat that as lab-only.
-
-5. Create the custom credential type and credential.
-6. Create or sync the controller Project from this repo.
-7. Create the localhost inventory.
-8. Create the Job Template and survey.
-9. Grant dev pilot team Execute on the Job Template only.
-10. Launch a platform test run.
-11. Confirm the archive exists at the printed path.
-12. Confirm the archive uploaded to the printed object storage reference.
-13. Confirm the controller Jobs page and Activity Stream show who launched the job.
-14. Run a pilot test as a dev user.
-
-Use `docs/aap-setup-runbook.md` for exact object setup and
-`docs/internal-validation-checklist.md` for the admin-led and dev-user validation
-passes.
 
 ## Dev User Runbook
 

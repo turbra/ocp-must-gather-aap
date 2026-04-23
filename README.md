@@ -46,14 +46,14 @@ controller job history.
 Start with the [Deployment Guide](docs/deployment-guide.md) when you
 are creating the workflow in an existing AWX or AAP controller.
 
-For a platform-admin rollout, use:
+After deployment, platform admins can use the
+[Admin Implementation Checklist](docs/aap-admin-implementation-checklist.md)
+for rollout tracking and the
+[Internal Platform Validation Checklist](docs/internal-validation-checklist.md)
+to validate RBAC, survey inputs, artifacts, audit trail, and failure behavior.
 
-- [AAP Setup Runbook](docs/aap-setup-runbook.md)
-- [Admin Implementation Checklist](docs/aap-admin-implementation-checklist.md)
-
-After deployment, use the
-[Internal Platform Validation Checklist](docs/internal-validation-checklist.md) to
-validate RBAC, survey inputs, artifacts, audit trail, and failure behavior.
+For controller object detail, `oc` version pinning, and local AWX development,
+see the [AAP Setup Runbook](docs/aap-setup-runbook.md).
 
 The Execution Environment downloads a pinned OpenShift `oc` client during the
 image build and verifies it with a pinned SHA-256 checksum. Keep the client on
