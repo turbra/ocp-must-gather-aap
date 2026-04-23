@@ -199,23 +199,7 @@ must-gather output and is named with `must-gather_raw_...`.
 > to originals. Do not share this file. It is deliberately excluded from the
 > handoff archive.
 
-Object storage is the download handoff location. Configure it with
-platform-owned extra vars and the S3 custom credential:
-
-```yaml
-ocp_must_gather_s3_upload_enabled: true
-ocp_must_gather_s3_endpoint_url: https://s3.example.invalid
-ocp_must_gather_s3_bucket: must-gather-artifacts
-ocp_must_gather_s3_region: us-east-1
-ocp_must_gather_s3_prefix: must-gather
-ocp_must_gather_s3_validate_certs: true
-```
-
-The controlled object key pattern is:
-
-```text
-<prefix>/<cluster>/<archive-name>
-```
+Object storage extra vars and the key pattern belong in the Job Template. See [Deployment Guide](deployment-guide.md) section 3.
 
 Before the live pilot, run a platform-admin test and confirm:
 
@@ -228,138 +212,23 @@ Then confirm the same archive exists in the configured object storage bucket.
 
 ## 5. Create The Custom Credential Type
 
-In the controller, create a custom credential type:
-
-- Name: `OpenShift Must-Gather Kubeconfig`
-- Kind: `Cloud`
-
-Use the contents of:
-
-```text
-aap/custom-credential-type-openshift-kubeconfig.yml
-```
-
-Also create the S3 object storage custom credential type from:
-
-```text
-aap/custom-credential-type-s3-object-store.yml
-```
-
-The credential type writes the kubeconfig to a temporary file and sets:
-
-```text
-KUBECONFIG=<temporary file path>
-```
-
-The injector uses `{{ tower.filename }}`, which is the variable documented by
-Red Hat AAP 2.5 for generated credential files.
+Create both credential types from the files listed in [Deployment Guide](deployment-guide.md) section 3. The kubeconfig credential type writes the kubeconfig to a temporary file and sets `KUBECONFIG` for the job. The injector uses `{{ tower.filename }}`, which is the variable documented by Red Hat AAP 2.5 for generated credential files.
 
 ## 6. Create The Platform-owned Credential
 
-Create one credential:
-
-- Name: `mustgather-clustera-sa`
-- Credential Type: `OpenShift Must-Gather Kubeconfig`
-- Organization: platform-owned organization
-- Kubeconfig: paste the service account kubeconfig
-
-The pasted kubeconfig determines the cluster identity used by the job. Verify
-it with `oc whoami` before attaching it to the Job Template. Do not use a
-personal cluster-admin kubeconfig outside homelab or temporary lab validation.
-
-Create the object storage credential when upload is enabled:
-
-- Name: `mustgather-artifact-s3`
-- Credential Type: `S3 Object Store Access`
-- Organization: platform-owned organization
-- Access key: platform-owned object storage access key
-- Secret key: platform-owned object storage secret key
-- Region: optional region value for the S3-compatible endpoint
-
-Do not grant dev users direct access to either credential.
+See [Deployment Guide](deployment-guide.md) section 3 for credential field values and creation steps. The kubeconfig content determines the OpenShift identity for every job. Do not grant dev users direct access to either credential.
 
 ## 7. Create The Project
 
-Create or update a controller Project:
-
-- Name: `ocp-mustgather-aap`
-- Source Control URL: this repo
-- Branch: rollout branch or `main`, according to platform process
-- Update Revision on Launch: enabled for pilot
-
-Sync the Project and confirm the controller lists:
-
-```text
-playbooks/ocp_must_gather.yml
-```
+See [Deployment Guide](deployment-guide.md) section 3 for Project field values and creation steps.
 
 ## 8. Create The Inventory
 
-Create a static Inventory and add one host:
-
-```yaml
-all:
-  hosts:
-    localhost:
-      ansible_connection: local
-```
-
-The sample inventory is:
-
-```text
-inventories/localhost.yml
-```
+See [Deployment Guide](deployment-guide.md) section 3 for Inventory field values and creation steps. The sample inventory file is `inventories/localhost.yml`.
 
 ## 9. Create The Job Template
 
-Create one Job Template:
-
-- Name: `OpenShift Must-Gather - ClusterA`
-- Job Type: `Run`
-- Inventory: localhost inventory
-- Project: `ocp-mustgather-aap`
-- Playbook: `playbooks/ocp_must_gather.yml`
-- Credentials:
-  - `mustgather-clustera-sa`
-  - `mustgather-artifact-s3` when object storage upload is enabled
-- Execution Environment: EE containing `oc`
-- Verbosity: `1`
-- Allow simultaneous jobs: disabled
-- Timeout: `7200`
-
-Disable these prompts on launch:
-
-- Inventory
-- Credentials
-- Variables
-
-Set platform-owned extra vars:
-
-```yaml
-ocp_must_gather_cluster_name: clustera
-ocp_must_gather_output_root: /runner/artifacts/ocp-must-gather
-ocp_must_gather_clean_config: /runner/project/config/must-gather-clean/openshift_default.yaml
-ocp_must_gather_s3_upload_enabled: true
-ocp_must_gather_s3_endpoint_url: https://s3.example.invalid
-ocp_must_gather_s3_bucket: must-gather-artifacts
-ocp_must_gather_s3_region: us-east-1
-ocp_must_gather_s3_prefix: must-gather
-ocp_must_gather_s3_validate_certs: true
-```
-
-The example object shape is:
-
-```text
-aap/job-template-example.yml
-```
-
-The standalone final survey definition is:
-
-```text
-aap/survey-spec.yml
-```
-
-Use the [Deployment Guide](deployment-guide.md) section 2 for the preferred CLI apply path.
+See [Deployment Guide](deployment-guide.md) section 3 for Job Template field values, extra vars, and creation steps.
 
 For local AWX development only, you can set
 `aap_must_gather_project_scm_type: manual` and
@@ -398,70 +267,11 @@ Use SCM-backed Projects for the real pilot.
 
 ## 10. Create The Survey
 
-Enable the survey and add only these fields.
-
-Required support case field:
-
-- Prompt: `Red Hat support case ID`
-- Variable: `support_case_id`
-- Type: `Text`
-- Required: yes
-- Minimum length: `3`
-- Maximum length: `64`
-
-Optional reference field:
-
-- Prompt: `Short reference label`
-- Variable: `reference_label`
-- Type: `Text`
-- Required: no
-- Minimum length: `0`
-- Maximum length: `32`
-
-Cleaning toggle:
-
-- Prompt: `Run must-gather-clean`
-- Variable: `ocp_must_gather_clean_enabled`
-- Type: `Multiple choice`
-- Choices: `false`, `true`
-- Required: yes
-- Default: `false`
-
-If regex validation is available in your AAP version, use:
-
-```text
-support_case_id: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
-reference_label: ^$|^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$
-```
-
-Do not add any other survey fields for the MVP.
-Do not expose the must-gather-clean config path, report path, or arbitrary
-cleaner flags in the survey.
+See [Deployment Guide](deployment-guide.md) section 3 for survey field values and regex patterns. Do not add survey fields beyond those defined there. The survey definition file is `aap/survey-spec.yml`.
 
 ## 11. Configure RBAC
 
-Platform team owns:
-
-- Project
-- Inventory
-- Credential
-- Execution Environment
-- Job Template
-- Source repo
-
-Pilot dev team receives:
-
-- Execute role on `OpenShift Must-Gather - ClusterA`
-
-Pilot dev team must not receive:
-
-- Credential access
-- Project update or admin access
-- Inventory admin access
-- Job Template admin access
-- Organization admin access
-
-Validate by logging in as a pilot dev user before the live pilot.
+See [Deployment Guide](deployment-guide.md) section 3 for RBAC configuration. Validate by logging in as a pilot dev user before the live pilot.
 
 ## 12. Post-deployment Checks
 
