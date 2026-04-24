@@ -226,7 +226,7 @@
     state: directory
     mode: "0700"
 
-- name: Run fixed OpenShift must-gather command
+- name: Run OpenShift must-gather command
   ansible.builtin.command:
     argv:
       - oc
@@ -235,7 +235,8 @@
       - --dest-dir
       - "{{ ocp_must_gather_raw_dir }}"
   async: "{{ ocp_must_gather_command_timeout }}"
-  poll: 15
+  poll: 60
+  no_log: true
   register: ocp_must_gather_result
   changed_when: true
 
@@ -273,20 +274,16 @@
   when: ocp_must_gather_clean_enabled | bool
 
 - name: Run must-gather-clean command
-  ansible.builtin.command:
-    argv:
-      - must-gather-clean
-      - -c
-      - "{{ ocp_must_gather_clean_config }}"
-      - -i
-      - "{{ ocp_must_gather_clean_input_dir }}"
-      - -o
-      - "{{ ocp_must_gather_clean_dir }}"
-      - -r
-      - "{{ ocp_must_gather_clean_report_dir }}"
-      - -d
-  async: "{{ ocp_must_gather_command_timeout }}"
-  poll: 15
+  ansible.builtin.shell:
+    cmd: >-
+      must-gather-clean
+      -c {{ ocp_must_gather_clean_config | quote }}
+      -i {{ ocp_must_gather_clean_input_dir | quote }}
+      -o {{ ocp_must_gather_clean_dir | quote }}
+      -r {{ ocp_must_gather_clean_report_dir | quote }}
+      -d
+      < /dev/null
+  no_log: true
   register: ocp_must_gather_clean_result
   changed_when: true
   when: ocp_must_gather_clean_enabled | bool
