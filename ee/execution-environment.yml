@@ -18,6 +18,7 @@ additional_build_steps:
     - >-
       ARG
       OPENSHIFT_CLIENT_LINUX_ARM64_SHA256=1d7b59e68b9c59d0be893023d8ef70048da3932b695a0654c2e741beee3f0994
+    - ARG MUST_GATHER_CLEAN_VERSION=v0.0.4
     - ARG TARGETARCH=amd64
     - >-
       RUN case "${TARGETARCH}" in
@@ -37,8 +38,12 @@ additional_build_steps:
       && chmod 0755 /usr/local/bin/oc
       && rm -f /tmp/openshift-client.tar.gz
     - >-
-      RUN curl -fsSL
-      https://github.com/openshift/must-gather-clean/releases/download/v0.0.4/must-gather-clean-linux-amd64.tar.gz
+      RUN case "${TARGETARCH}" in
+      amd64|arm64) must_gather_clean_arch="${TARGETARCH}" ;;
+      *) echo "Unsupported must-gather-clean arch: ${TARGETARCH}" >&2; exit 1 ;;
+      esac
+      && curl -fsSL
+      "https://github.com/openshift/must-gather-clean/releases/download/${MUST_GATHER_CLEAN_VERSION}/must-gather-clean-linux-${must_gather_clean_arch}.tar.gz"
       -o /tmp/must-gather-clean.tar.gz
       && tar -xzf /tmp/must-gather-clean.tar.gz -C /usr/local/bin
       must-gather-clean
