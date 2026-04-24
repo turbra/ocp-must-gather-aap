@@ -1,0 +1,51 @@
+---
+# Platform-owned must-gather-clean config for the AAP must-gather MVP.
+# Based on:
+# https://github.com/openshift/must-gather-clean/blob/main/examples/openshift_omit_network.yaml
+#
+# Extends openshift_default.yaml by excluding openshift-sdn pod log files
+# from the cleaned output. Use when the investigation focuses on cluster
+# configuration, operator state, or resources rather than SDN pod log content.
+# SDN pod logs are absent from the handoff archive entirely — not obfuscated.
+#
+# If SDN pod log content is required, use openshift_default.yaml instead.
+#
+# Keep this file controlled by the platform team. Do not expose it through an
+# AAP survey. Add organization-specific domain names here only after platform
+# review.
+config:
+  obfuscate:
+    - type: IP
+      replacementType: Consistent
+      target: All
+    - type: MAC
+      replacementType: Consistent
+      target: All
+    - type: Domain
+      replacementType: Consistent
+      target: All
+      domainNames:
+        - "rhcloud.com"
+        - "dev.rhcloud.com"
+  omit:
+    - type: File
+      pattern: "*/namespaces/openshift-sdn/pods/*/*/*/logs/*.log"
+    - type: Kubernetes
+      kubernetesResource:
+        kind: "Secret"
+    - type: Kubernetes
+      kubernetesResource:
+        kind: "ConfigMap"
+    - type: Kubernetes
+      kubernetesResource:
+        kind: CertificateSigningRequest
+        apiVersion: certificates.k8s.io/v1
+    - type: Kubernetes
+      kubernetesResource:
+        kind: CertificateSigningRequestList
+        apiVersion: certificates.k8s.io/v1
+    - type: Kubernetes
+      kubernetesResource:
+        kind: MachineConfig
+        apiVersion: machineconfiguration.openshift.io/v1
+  randSeed: 1
