@@ -86,7 +86,7 @@ The role then archives the collected directory with `tar`.
 When `ocp_must_gather_clean_enabled` is true, the role runs:
 
 ```bash
-must-gather-clean -c <platform_config> -i <raw_dir> -o <cleaned_dir> -r <report_dir>
+must-gather-clean -c <platform_config> -i <raw_dir> -o <cleaned_dir> -r <report_dir> -d
 ```
 
 The config is platform-owned and lives at:
@@ -96,8 +96,8 @@ config/must-gather-clean/openshift_default.yaml
 ```
 
 This config is based on the upstream OpenShift default example. It obfuscates
-IPs, MACs, configured domain names, and Azure resource identifiers. It omits
-Secrets, ConfigMaps, certificate signing requests, and MachineConfigs.
+IPs, MACs, and configured domain names. It omits Secrets, ConfigMaps,
+certificate signing requests, and MachineConfigs.
 must-gather-clean is community-supported and is not a Red Hat-supported
 product.
 
@@ -175,6 +175,8 @@ not duplicate the full controller setup.
   AWX or AAP controller.
 - Use `docs/aap-setup-runbook.md` for the detailed platform-admin setup
   sequence.
+- Use `docs/must-gather-clean.md` for the cleaning toggle, repository config,
+  supported obfuscation behavior, and validation examples.
 - Use `docs/aap-admin-implementation-checklist.md` as the rollout tracker.
 - Use `docs/internal-validation-checklist.md` for internal platform validation
   after deployment.

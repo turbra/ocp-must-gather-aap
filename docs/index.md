@@ -37,7 +37,9 @@ Internal platform team use only.
 
 ## Reference
 
+- <a href="{{ '/must-gather-clean.html' | relative_url }}"><kbd>MUST-GATHER-CLEAN</kbd></a>
+  for the cleaning survey toggle, repository config, supported obfuscation
+  behavior, and validation examples
 - <a href="{{ '/architecture-and-security.html' | relative_url }}"><kbd>ARCHITECTURE AND SECURITY</kbd></a>
   for the brokered-execution model, credential boundary, artifact flow, and
   known limitations
-
