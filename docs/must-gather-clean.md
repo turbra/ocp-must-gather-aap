@@ -87,6 +87,10 @@ retained files instead of expecting omission counts to differ.
 addresses, and configured domain names. It also supports custom obfuscators
 through `Keywords` and `Regex`.
 
+The following examples are not enabled in this repository by default. They show
+optional upstream `must-gather-clean` features that platform admins can add to
+`config/must-gather-clean/openshift_default.yaml` after review.
+
 Use `Keywords` when specific known strings should be replaced:
 
 ```yaml
