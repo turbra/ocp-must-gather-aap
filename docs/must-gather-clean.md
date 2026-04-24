@@ -35,32 +35,49 @@ Users cannot provide cleaner flags, paths, or config through the survey.
 
 ## Repository Configuration
 
-The platform-owned cleaner config is stored in:
+Two platform-owned cleaner configs are stored in:
 
 ```text
 config/must-gather-clean/openshift_default.yaml
+config/must-gather-clean/openshift_omit_network.yaml
 ```
 
-The role default points to that file:
+Both apply the same obfuscation rules. `openshift_omit_network.yaml` additionally
+excludes openshift-sdn pod log files from the cleaned output. Those files are
+absent from the handoff archive entirely — not obfuscated.
+
+The role default points to the full config:
 
 ```yaml
 ocp_must_gather_clean_config: >-
   {{ playbook_dir }}/../config/must-gather-clean/openshift_default.yaml
 ```
 
-Controller deployments may set the same path explicitly as a Job Template extra
-var:
+To use the network config, set this as a Job Template extra var:
 
 ```yaml
-ocp_must_gather_clean_config: /runner/project/config/must-gather-clean/openshift_default.yaml
+ocp_must_gather_clean_config: /runner/project/config/must-gather-clean/openshift_omit_network.yaml
 ```
 
-Do not expose `ocp_must_gather_clean_config` as a survey field. Changes to the
-cleaner config should be reviewed and versioned in this repository.
+Do not expose `ocp_must_gather_clean_config` as a survey field. The config
+choice is a platform admin decision. Changes to either config should be
+reviewed and versioned in this repository.
+
+## Choosing a Config
+
+| Config | SDN pod logs in handoff archive |
+| --- | --- |
+| `openshift_default.yaml` | Yes — obfuscated |
+| `openshift_omit_network.yaml` | No — excluded entirely |
+
+Use `openshift_omit_network.yaml` only when the investigation focuses on
+cluster configuration, operator state, or resources and SDN pod log content
+is not required by the support case. If there is any doubt, use
+`openshift_default.yaml`.
 
 ## Current Behavior
 
-The current config obfuscates these values in retained files:
+Both configs obfuscate these values in retained files:
 
 | Type | Replacement | Target |
 | --- | --- | --- |
@@ -68,14 +85,19 @@ The current config obfuscates these values in retained files:
 | `MAC` | consistent token such as `x-mac-0000000001-x` | paths and file contents |
 | `Domain` | consistent token such as `domain0000000001` | paths and file contents |
 
-The current config omits Kubernetes resources with these kinds when they are
-present in the must-gather:
+Both configs omit Kubernetes resources with these kinds when they are present
+in the must-gather:
 
 - `Secret`
 - `ConfigMap`
 - `CertificateSigningRequest`
 - `CertificateSigningRequestList`
 - `MachineConfig`
+
+`openshift_omit_network.yaml` additionally omits:
+
+- openshift-sdn pod log files matching
+  `*/namespaces/openshift-sdn/pods/*/*/*/logs/*.log`
 
 Some must-gather collections may not contain Secrets or ConfigMaps before
 cleaning. In that case, validate cleaning by comparing obfuscated values in
@@ -89,7 +111,7 @@ through `Keywords` and `Regex`.
 
 The following examples are not enabled in this repository by default. They show
 optional upstream `must-gather-clean` features that platform admins can add to
-`config/must-gather-clean/openshift_default.yaml` after review.
+either config file after review.
 
 Use `Keywords` when specific known strings should be replaced:
 
@@ -165,3 +187,8 @@ Cleaning can be significantly slower than raw collection because the tool reads
 and rewrites retained files. In current validation, a raw must-gather completed
 successfully while a clean-enabled run took substantially longer. Use the survey
 toggle intentionally when a cleaned artifact is required.
+
+`openshift_omit_network.yaml` will complete faster than `openshift_default.yaml`
+on must-gathers from SDN-heavy clusters because openshift-sdn pod logs — which
+are typically large and IP-dense — are excluded before the obfuscation passes
+run. This is a consequence of the reduced scope, not a tuning objective.
