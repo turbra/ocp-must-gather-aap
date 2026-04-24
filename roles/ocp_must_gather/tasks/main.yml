@@ -252,48 +252,10 @@
   changed_when: false
   failed_when: ocp_must_gather_generated_files.stdout | length == 0
 
-- name: Locate generated must-gather content file
-  ansible.builtin.command:
-    argv:
-      - find
-      - "{{ ocp_must_gather_raw_dir }}"
-      - -mindepth
-      - "1"
-      - -type
-      - f
-      - "!"
-      - -name
-      - event-filter.html
-      - -print
-      - -quit
-  register: ocp_must_gather_content_file
-  changed_when: false
-  when: ocp_must_gather_clean_enabled | bool
-
 - name: Select must-gather-clean input directory
   ansible.builtin.set_fact:
-    ocp_must_gather_content_relative_path: >-
-      {{
-        ocp_must_gather_content_file.stdout
-        | replace(ocp_must_gather_raw_dir ~ '/', '')
-      }}
     ocp_must_gather_clean_input_dir: >-
-      {{
-        ocp_must_gather_raw_dir ~ '/' ~ (
-          (
-            ocp_must_gather_content_file.stdout
-            | replace(ocp_must_gather_raw_dir ~ '/', '')
-          ).split('/')[0]
-        )
-        if (
-          ocp_must_gather_content_file.stdout | length > 0
-          and '/' in (
-            ocp_must_gather_content_file.stdout
-            | replace(ocp_must_gather_raw_dir ~ '/', '')
-          )
-        )
-        else ocp_must_gather_raw_dir
-      }}
+      {{ ocp_must_gather_raw_dir }}
   when: ocp_must_gather_clean_enabled | bool
 
 - name: Create controlled must-gather-clean report directory
@@ -310,7 +272,7 @@
     mode: "0700"
   when: ocp_must_gather_clean_enabled | bool
 
-- name: Run fixed must-gather-clean command
+- name: Run must-gather-clean command
   ansible.builtin.command:
     argv:
       - must-gather-clean
@@ -323,6 +285,8 @@
       - -r
       - "{{ ocp_must_gather_clean_report_dir }}"
       - -d
+  async: "{{ ocp_must_gather_command_timeout }}"
+  poll: 15
   register: ocp_must_gather_clean_result
   changed_when: true
   when: ocp_must_gather_clean_enabled | bool

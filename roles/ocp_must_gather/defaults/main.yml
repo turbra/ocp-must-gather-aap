@@ -2,7 +2,7 @@
 # Platform-owned settings. Do not expose these as survey fields for the MVP.
 ocp_must_gather_cluster_name: clustera
 ocp_must_gather_output_root: /runner/artifacts/ocp-must-gather
-ocp_must_gather_work_root: /tmp/ocp-must-gather-runs
+ocp_must_gather_work_root: /var/tmp/ocp-must-gather-runs
 ocp_must_gather_command_timeout: 3600
 ocp_must_gather_min_archive_bytes: 1024
 ocp_must_gather_cleanup_work_dir: true
