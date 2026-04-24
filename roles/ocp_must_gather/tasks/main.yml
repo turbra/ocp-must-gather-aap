@@ -285,8 +285,6 @@
       - -r
       - "{{ ocp_must_gather_clean_report_dir }}"
       - -d
-  async: "{{ ocp_must_gather_command_timeout }}"
-  poll: 15
   register: ocp_must_gather_clean_result
   changed_when: true
   when: ocp_must_gather_clean_enabled | bool
