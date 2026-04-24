@@ -88,6 +88,8 @@ They launch a predefined job and provide constrained metadata only.
   controller object detail, `oc` version pinning, and local AWX development.
 - [Internal Platform Validation Checklist](docs/internal-validation-checklist.md):
   internal platform team use only; validate RBAC, survey, artifacts, and audit after deployment.
+- [must-gather-clean reference](docs/must-gather-clean.md): cleaning survey
+  toggle, repository config, supported obfuscation behavior, and validation examples.
 - [Architecture and security reference](docs/architecture-and-security.md): brokered execution
   model, credential boundary, artifact flow, and limitations.
 
