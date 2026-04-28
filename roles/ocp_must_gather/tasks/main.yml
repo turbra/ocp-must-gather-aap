@@ -226,7 +226,7 @@
     state: directory
     mode: "0700"
 
-- name: Run OpenShift must-gather command
+- name: Start OpenShift must-gather command
   ansible.builtin.command:
     argv:
       - oc
@@ -235,10 +235,21 @@
       - --dest-dir
       - "{{ ocp_must_gather_raw_dir }}"
   async: "{{ ocp_must_gather_command_timeout }}"
-  poll: 60
-  no_log: true
-  register: ocp_must_gather_result
+  poll: 0
+  register: ocp_must_gather_async_start
   changed_when: true
+
+- name: Wait for OpenShift must-gather command
+  ansible.builtin.async_status:
+    jid: "{{ ocp_must_gather_async_start.ansible_job_id }}"
+  register: ocp_must_gather_result
+  until: ocp_must_gather_result.finished | default(false)
+  retries: "{{ (ocp_must_gather_command_timeout | int // 60) + 1 }}"
+  delay: 60
+  changed_when: true
+  failed_when:
+    - ocp_must_gather_result.finished | default(false)
+    - ocp_must_gather_result.rc | default(1) != 0
 
 - name: Verify must-gather produced files
   ansible.builtin.command:
