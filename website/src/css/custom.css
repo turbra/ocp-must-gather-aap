@@ -13,6 +13,7 @@
   --ifm-global-radius: 6px;
   --ifm-navbar-height: 4rem;
   --ifm-toc-border-color: #e0e0e0;
+  --doc-sidebar-width: 294px;
 }
 
 html[data-theme='dark'] {
@@ -35,12 +36,20 @@ body {
 }
 
 .theme-doc-sidebar-container {
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid var(--ifm-toc-border-color) !important;
+}
+
+.theme-doc-sidebar-menu {
+  padding: 0.75rem;
 }
 
 .menu__link {
   border-radius: 6px;
   font-size: 0.94rem;
+}
+
+.menu__list-item-collapsible {
+  border-radius: 6px;
 }
 
 .menu__link--active {
@@ -49,15 +58,24 @@ body {
 
 .theme-doc-markdown {
   max-width: 840px;
+  font-size: 1rem;
+  line-height: 1.72;
 }
 
-.markdown h1 {
+.theme-doc-markdown h1 {
   font-size: 2.45rem;
   line-height: 1.12;
+  letter-spacing: 0;
 }
 
-.markdown h2 {
-  margin-top: 2.4rem;
+.theme-doc-markdown h2 {
+  border-top: 1px solid var(--ifm-toc-border-color);
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+}
+
+.theme-doc-markdown > h2:first-child {
+  border-top: 0;
 }
 
 .markdown > p:first-of-type {
@@ -75,15 +93,72 @@ body {
 }
 
 .table-of-contents {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .footer {
   border-top: 1px solid #e0e0e0;
 }
 
+.aap-hero {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.aap-hero__lead {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1.08rem;
+  max-width: 760px;
+}
+
+.aap-badges {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.aap-link-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1.5rem 0;
+}
+
+.aap-link-card {
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 8px;
+  color: inherit;
+  display: block;
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.aap-link-card:hover {
+  border-color: var(--ifm-color-primary);
+  color: inherit;
+  text-decoration: none;
+}
+
+.aap-link-card strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.aap-link-card span {
+  color: var(--ifm-color-emphasis-700);
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 996px) {
-  .markdown h1 {
+  .theme-doc-markdown h1 {
     font-size: 2rem;
+  }
+
+  .aap-link-grid {
+    grid-template-columns: 1fr;
   }
 }

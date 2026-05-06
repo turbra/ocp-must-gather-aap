@@ -11,6 +11,7 @@ const config = {
   trailingSlash: true,
 
   onBrokenLinks: 'throw',
+  onBrokenAnchors: 'warn',
   markdown: {
     mermaid: true,
     hooks: {
@@ -40,6 +41,18 @@ const config = {
 
   themeConfig: {
     image: 'img/social-card.svg',
+    metadata: [
+      {
+        name: 'description',
+        content:
+          'Documentation for brokered OpenShift must-gather collection through AWX or Ansible Automation Platform.',
+      },
+    ],
+    colorMode: {
+      defaultMode: 'light',
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
+    },
     navbar: {
       title: 'OCP must-gather through AAP',
       logo: {
@@ -56,6 +69,11 @@ const config = {
         {
           to: '/deployment-guide/',
           label: 'Deploy',
+          position: 'left',
+        },
+        {
+          to: '/validation/',
+          label: 'Validate',
           position: 'left',
         },
         {
@@ -77,7 +95,11 @@ const config = {
           title: 'Docs',
           items: [
             { label: 'Deployment Guide', to: '/deployment-guide/' },
+            { label: 'Getting Started', to: '/getting-started/prerequisites/' },
+            { label: 'Validation', to: '/validation/' },
             { label: 'Reference', to: '/reference/' },
+            { label: 'Examples', to: '/examples/' },
+            { label: 'Local Validation', to: '/project/local-validation/' },
             { label: 'Architecture And Security', to: '/architecture-and-security/' },
           ],
         },

@@ -171,15 +171,17 @@ not a presigned URL.
 This document explains the model and security boundary. It intentionally does
 not duplicate the full controller setup.
 
-- Use `docs/deployment-guide.md` to create the workflow in an existing
-  AWX or AAP controller.
-- Use `docs/aap-setup-runbook.md` for the detailed platform-admin setup
-  sequence.
-- Use `docs/must-gather-clean.md` for the cleaning toggle, repository config,
-  supported obfuscation behavior, and validation examples.
-- Use `docs/aap-admin-implementation-checklist.md` as the rollout tracker.
-- Use `docs/internal-validation-checklist.md` for internal platform validation
-  after deployment.
+- Use the [Deployment Guide](deployment-guide.md) to create the workflow in an
+  existing AWX or AAP controller.
+- Use the [AAP Setup Runbook](aap-setup-runbook.md) for the detailed
+  platform-admin setup sequence.
+- Use [must-gather-clean](must-gather-clean.md) for the cleaning toggle,
+  repository config, supported obfuscation behavior, and validation examples.
+- Use the [Admin Implementation Checklist](aap-admin-implementation-checklist.md)
+  as the rollout tracker.
+- Use [Validation](validation/index.md) and the
+  [Internal Platform Validation Checklist](internal-validation-checklist.md) for
+  platform validation after deployment.
 
 ## RBAC Intent
 
