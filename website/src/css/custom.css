@@ -1,0 +1,89 @@
+:root {
+  --ifm-color-primary: #c9190b;
+  --ifm-color-primary-dark: #a30000;
+  --ifm-color-primary-darker: #820000;
+  --ifm-color-primary-darkest: #5f0000;
+  --ifm-color-primary-light: #ee0000;
+  --ifm-color-primary-lighter: #f23a3a;
+  --ifm-color-primary-lightest: #ffe5e5;
+  --ifm-background-color: #ffffff;
+  --ifm-font-family-base: "Red Hat Text", "Helvetica Neue", Arial, sans-serif;
+  --ifm-heading-font-family: "Red Hat Display", "Red Hat Text", Arial, sans-serif;
+  --ifm-code-font-size: 0.92rem;
+  --ifm-global-radius: 6px;
+  --ifm-navbar-height: 4rem;
+  --ifm-toc-border-color: #e0e0e0;
+}
+
+html[data-theme='dark'] {
+  --ifm-color-primary: #ff6961;
+  --ifm-background-color: #151515;
+  --ifm-background-surface-color: #1f1f1f;
+}
+
+body {
+  font-size: 16px;
+}
+
+.navbar {
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: none;
+}
+
+.navbar__title {
+  font-weight: 700;
+}
+
+.theme-doc-sidebar-container {
+  border-right: 1px solid #e0e0e0;
+}
+
+.menu__link {
+  border-radius: 6px;
+  font-size: 0.94rem;
+}
+
+.menu__link--active {
+  font-weight: 700;
+}
+
+.theme-doc-markdown {
+  max-width: 840px;
+}
+
+.markdown h1 {
+  font-size: 2.45rem;
+  line-height: 1.12;
+}
+
+.markdown h2 {
+  margin-top: 2.4rem;
+}
+
+.markdown > p:first-of-type {
+  color: #4d4d4d;
+  font-size: 1.05rem;
+}
+
+.markdown table {
+  display: table;
+  width: 100%;
+}
+
+.theme-code-block {
+  border: 1px solid #d8dee4;
+}
+
+.table-of-contents {
+  font-size: 0.9rem;
+}
+
+.footer {
+  border-top: 1px solid #e0e0e0;
+}
+
+@media (max-width: 996px) {
+  .markdown h1 {
+    font-size: 2rem;
+  }
+}

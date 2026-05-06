@@ -123,6 +123,13 @@ Or run the core syntax check directly:
 ansible-playbook --syntax-check -i inventories/localhost.yml playbooks/ocp_must_gather.yml
 ```
 
+Validate the Docusaurus GitHub Pages documentation site with the same wrapper
+used by the Pages workflow:
+
+```bash
+scripts/validate-docs-site.sh
+```
+
 Do not run the playbook directly without a valid `KUBECONFIG` for the
 platform-owned must-gather service account or equivalent privileged non-human
 identity.

@@ -71,3 +71,6 @@ docs/.bundle/
 docs/vendor/
 docs/_scripts/node_modules/
 node_modules/
+website/.docusaurus/
+website/build/
+website/node_modules/

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <rect x="72" y="72" width="96" height="96" rx="14" fill="#ee0000"/>
+  <path fill="#fff" d="M96 105h48v9H96zm0 17h36v9H96zm0 17h48v9H96z"/>
+  <text x="72" y="260" fill="#151515" font-family="Arial, sans-serif" font-size="58" font-weight="700">OCP must-gather through AAP</text>
+  <text x="72" y="336" fill="#4d4d4d" font-family="Arial, sans-serif" font-size="32">Broker privileged OpenShift must-gather through AWX/AAP.</text>
+  <rect x="72" y="450" width="1056" height="2" fill="#e0e0e0"/>
+  <text x="72" y="520" fill="#6a6e73" font-family="Arial, sans-serif" font-size="28">Docs-first deployment, validation, and security reference.</text>
+</svg>
