@@ -1,0 +1,21 @@
+{
+  "name": "ocp-must-gather-aap-docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "docusaurus build",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve --host 0.0.0.0",
+    "start": "docusaurus start --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.1",
+    "@docusaurus/preset-classic": "3.10.1",
+    "@docusaurus/theme-mermaid": "3.10.1",
+    "@mermaid-js/layout-elk": "0.1.9"
+  },
+  "devDependencies": {},
+  "overrides": {
+    "serialize-javascript": "7.0.5"
+  }
+}
