@@ -1,0 +1,92 @@
+---
+title: Examples
+description: Common controller setup, launch, artifact, cleaning, and failure-triage examples.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Examples
+
+## Apply Controller Configuration
+
+```bash
+cp aap/controller-vars.example.yml /secure/path/controller-vars.yml
+vi /secure/path/controller-vars.yml
+
+export CONTROLLER_HOST=https://aap.example.com
+export CONTROLLER_OAUTH_TOKEN=<token>
+scripts/apply-aap-controller-mvp.sh /secure/path/controller-vars.yml
+```
+
+## Launch Values
+
+<Tabs>
+  <TabItem value="raw" label="Raw must-gather" default>
+
+```text
+support_case_id=SMOKE001
+reference_label=admin-smoke
+ocp_must_gather_clean_enabled=false
+```
+
+  </TabItem>
+  <TabItem value="cleaned" label="Cleaned must-gather">
+
+```text
+support_case_id=SMOKE002
+reference_label=clean-smoke
+ocp_must_gather_clean_enabled=true
+```
+
+  </TabItem>
+</Tabs>
+
+## Verify Object Storage
+
+```text
+Object storage: s3://<bucket>/<prefix>/<cluster>/<archive-name>
+Download reference: <endpoint>/<bucket>/<prefix>/<cluster>/<archive-name>
+```
+
+Download the archive and list it:
+
+```bash
+tar -tzf <downloaded archive> >/dev/null
+```
+
+## Verify Survey Scope
+
+As a development user, confirm the launch prompt only exposes:
+
+```text
+support_case_id
+reference_label
+ocp_must_gather_clean_enabled
+```
+
+Do not expose bucket, endpoint, command, path, credential, or cleaner config
+inputs.
+
+## Triage Common Failures
+
+If the job fails before Ansible starts:
+
+```text
+Check Project sync, playbook path, Execution Environment image, and controller
+container runtime access.
+```
+
+If the job fails at `KUBECONFIG is not set`:
+
+```text
+Attach the platform-owned OpenShift kubeconfig credential and confirm the
+custom credential type injects KUBECONFIG.
+```
+
+If no object storage reference is printed:
+
+```text
+Confirm upload is enabled, the S3 credential is attached, endpoint and bucket
+values are correct, and the Execution Environment can reach object storage.
+```

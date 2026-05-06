@@ -1,0 +1,112 @@
+---
+id: home
+slug: /
+title: OCP must-gather through AAP
+description: Controlled brokered OpenShift must-gather collection through AWX or Ansible Automation Platform.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Link from '@docusaurus/Link';
+
+<div className="aap-hero">
+  <p className="aap-hero__lead">Run one controlled OpenShift must-gather workflow from AWX or Ansible Automation Platform without giving development users direct cluster-admin access.</p>
+  <div className="aap-badges">
+    <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache--2.0-2C7A7B?style=flat-square" /></a>
+  </div>
+</div>
+
+Platform administrators own the Project, Inventory, credentials, Execution
+Environment, Job Template, survey, RBAC, and artifact handoff. Development
+users receive execute access to the finished Job Template only.
+
+## Quick Start
+
+<Tabs>
+  <TabItem value="apply" label="Apply wrapper" default>
+
+```bash
+cp aap/controller-vars.example.yml /secure/path/controller-vars.yml
+vi /secure/path/controller-vars.yml
+
+export CONTROLLER_HOST=https://aap.example.com
+export CONTROLLER_OAUTH_TOKEN=<token>
+scripts/apply-aap-controller-mvp.sh /secure/path/controller-vars.yml
+```
+
+  </TabItem>
+  <TabItem value="manual" label="Manual setup">
+
+```text
+Project: ocp-mustgather-aap
+Inventory: clustera-localhost
+Playbook: playbooks/ocp_must_gather.yml
+Job Template: OpenShift Must-Gather - ClusterA
+Survey: support_case_id, reference_label, ocp_must_gather_clean_enabled
+```
+
+Use the [manual fallback](deployment-guide.md#3-manual-fallback) only when the
+controller apply playbook is not available.
+
+  </TabItem>
+  <TabItem value="validate" label="Smoke launch">
+
+```text
+support_case_id=SMOKE001
+reference_label=admin-smoke
+ocp_must_gather_clean_enabled=false
+```
+
+Confirm the job prints the OpenShift identity, local artifact path, and object
+storage reference when upload is enabled.
+
+  </TabItem>
+</Tabs>
+
+## Workflow
+
+1. A platform admin creates the controller objects and attaches platform-owned
+   credentials.
+2. A development user launches the approved Job Template.
+3. The survey accepts only `support_case_id`, `reference_label`, and
+   `ocp_must_gather_clean_enabled`.
+4. The playbook validates inputs, runs the fixed `oc adm must-gather` workflow,
+   optionally runs `must-gather-clean`, creates the archive, and uploads it when
+   object storage is enabled.
+5. Controller job history records the launch and prints the final artifact
+   reference.
+
+## Explore
+
+<div className="aap-link-grid">
+  <Link className="aap-link-card" to="/getting-started/prerequisites/">
+    <strong>Getting Started</strong>
+    <span>Collect required values, prepare the controller path, launch once, and verify artifact handoff.</span>
+  </Link>
+  <Link className="aap-link-card" to="/concepts/brokered-execution/">
+    <strong>Concepts</strong>
+    <span>Understand brokered execution, credential boundaries, survey inputs, artifacts, and cleaning.</span>
+  </Link>
+  <Link className="aap-link-card" to="/examples/">
+    <strong>Examples</strong>
+    <span>Copy-paste controller apply, smoke-test, object-storage, and failure-triage examples.</span>
+  </Link>
+</div>
+
+## Security Boundary
+
+This is brokered privileged execution, not delegated OpenShift RBAC. The
+OpenShift credential attached to the Job Template still has the access required
+to run must-gather, which may be effectively cluster-admin.
+
+Do not use a personal cluster-admin kubeconfig for real pilots or deployments.
+Use a dedicated platform-owned service account or equivalent non-human
+identity.
+
+## Reference
+
+- [Deployment Guide](deployment-guide.md): full setup path.
+- [Reference index](reference.md): controller objects, validation, cleaning,
+  and source files.
+- [Architecture And Security](architecture-and-security.md): execution model,
+  credential boundary, artifact flow, RBAC intent, and limitations.
